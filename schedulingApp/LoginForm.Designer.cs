@@ -32,6 +32,7 @@
             LoginContainer = new FlowLayoutPanel();
             LoginLabel = new Label();
             UserNameInput = new TextBox();
+            PasswordInput = new TextBox();
             LoginContainer.SuspendLayout();
             SuspendLayout();
             // 
@@ -40,6 +41,7 @@
             resources.ApplyResources(LoginContainer, "LoginContainer");
             LoginContainer.Controls.Add(LoginLabel);
             LoginContainer.Controls.Add(UserNameInput);
+            LoginContainer.Controls.Add(PasswordInput);
             LoginContainer.Name = "LoginContainer";
             // 
             // LoginLabel
@@ -54,6 +56,13 @@
             UserNameInput.AutoCompleteMode = AutoCompleteMode.Suggest;
             UserNameInput.BackColor = Color.Gainsboro;
             UserNameInput.Name = "UserNameInput";
+            // 
+            // PasswordInput
+            // 
+            resources.ApplyResources(PasswordInput, "PasswordInput");
+            PasswordInput.AutoCompleteMode = AutoCompleteMode.Suggest;
+            PasswordInput.BackColor = Color.Gainsboro;
+            PasswordInput.Name = "PasswordInput";
             // 
             // LoginForm
             // 
@@ -74,5 +83,6 @@
         private FlowLayoutPanel LoginContainer;
         private Label LoginLabel;
         private TextBox UserNameInput;
+        private TextBox PasswordInput;
     }
 }

@@ -117,26 +117,35 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-  <data name="LoginLabel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>150, 192</value>
-  </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="UserNameInput.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>None</value>
   </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="UserNameInput.Location" type="System.Drawing.Point, System.Drawing">
-    <value>481, 350</value>
+    <value>0, 196</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="UserNameInput.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>0, 350, 0, 0</value>
+    <value>0, 0, 0, 0</value>
   </data>
   <data name="UserNameInput.Size" type="System.Drawing.Size, System.Drawing">
-    <value>270, 31</value>
+    <value>569, 31</value>
+  </data>
+  <data name="PasswordInput.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>None</value>
+  </data>
+  <data name="PasswordInput.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 227</value>
+  </data>
+  <data name="PasswordInput.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 0, 0</value>
+  </data>
+  <data name="PasswordInput.Size" type="System.Drawing.Size, System.Drawing">
+    <value>569, 31</value>
   </data>
   <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="UserNameInput.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
+  <data name="PasswordInput.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
   </data>
 </root>
