@@ -1,4 +1,5 @@
-﻿namespace schedulingApp
+﻿
+namespace schedulingApp
 {
     partial class LoginForm
     {
@@ -46,9 +47,10 @@
             bttnLogin.Cursor = Cursors.Hand;
             bttnLogin.FlatStyle = FlatStyle.Flat;
             bttnLogin.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            bttnLogin.Location = new Point(108, 478);
+            bttnLogin.Location = new Point(123, 637);
+            bttnLogin.Margin = new Padding(3, 4, 3, 4);
             bttnLogin.Name = "bttnLogin";
-            bttnLogin.Size = new Size(75, 27);
+            bttnLogin.Size = new Size(86, 36);
             bttnLogin.TabIndex = 0;
             bttnLogin.Text = "Login";
             bttnLogin.UseVisualStyleBackColor = false;
@@ -56,17 +58,20 @@
             // 
             // usernameInput
             // 
-            usernameInput.Location = new Point(108, 349);
+            usernameInput.Location = new Point(123, 465);
+            usernameInput.Margin = new Padding(3, 4, 3, 4);
             usernameInput.Name = "usernameInput";
-            usernameInput.Size = new Size(334, 23);
+            usernameInput.Size = new Size(381, 27);
             usernameInput.TabIndex = 1;
+            usernameInput.TextChanged += this.usernameInput_TextChanged;
             // 
             // pictureBox1
             // 
             pictureBox1.Image = Properties.Resources.ocean__1_;
-            pictureBox1.Location = new Point(189, 50);
+            pictureBox1.Location = new Point(216, 67);
+            pictureBox1.Margin = new Padding(3, 4, 3, 4);
             pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(172, 166);
+            pictureBox1.Size = new Size(197, 221);
             pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBox1.TabIndex = 2;
             pictureBox1.TabStop = false;
@@ -74,11 +79,12 @@
             // labelUsername
             // 
             labelUsername.AutoSize = true;
-            labelUsername.Location = new Point(108, 331);
+            labelUsername.Location = new Point(123, 441);
             labelUsername.Name = "labelUsername";
-            labelUsername.Size = new Size(60, 15);
+            labelUsername.Size = new Size(75, 20);
             labelUsername.TabIndex = 3;
             labelUsername.Text = "Username";
+            labelUsername.Click += labelUsername_Click;
             // 
             // bttnRegister
             // 
@@ -86,9 +92,10 @@
             bttnRegister.Cursor = Cursors.Hand;
             bttnRegister.FlatStyle = FlatStyle.Flat;
             bttnRegister.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            bttnRegister.Location = new Point(367, 478);
+            bttnRegister.Location = new Point(419, 637);
+            bttnRegister.Margin = new Padding(3, 4, 3, 4);
             bttnRegister.Name = "bttnRegister";
-            bttnRegister.Size = new Size(75, 27);
+            bttnRegister.Size = new Size(86, 36);
             bttnRegister.TabIndex = 4;
             bttnRegister.Text = "Register";
             bttnRegister.UseVisualStyleBackColor = false;
@@ -100,9 +107,10 @@
             bttnExit.Cursor = Cursors.Hand;
             bttnExit.FlatStyle = FlatStyle.Flat;
             bttnExit.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            bttnExit.Location = new Point(452, 628);
+            bttnExit.Location = new Point(517, 837);
+            bttnExit.Margin = new Padding(3, 4, 3, 4);
             bttnExit.Name = "bttnExit";
-            bttnExit.Size = new Size(75, 27);
+            bttnExit.Size = new Size(86, 36);
             bttnExit.TabIndex = 5;
             bttnExit.Text = "Exit";
             bttnExit.UseVisualStyleBackColor = false;
@@ -111,17 +119,18 @@
             // labelPassword
             // 
             labelPassword.AutoSize = true;
-            labelPassword.Location = new Point(108, 392);
+            labelPassword.Location = new Point(123, 523);
             labelPassword.Name = "labelPassword";
-            labelPassword.Size = new Size(57, 15);
+            labelPassword.Size = new Size(70, 20);
             labelPassword.TabIndex = 7;
             labelPassword.Text = "Password";
             // 
             // passwordInput
             // 
-            passwordInput.Location = new Point(108, 410);
+            passwordInput.Location = new Point(123, 547);
+            passwordInput.Margin = new Padding(3, 4, 3, 4);
             passwordInput.Name = "passwordInput";
-            passwordInput.Size = new Size(334, 23);
+            passwordInput.Size = new Size(381, 27);
             passwordInput.TabIndex = 6;
             // 
             // titleLabel
@@ -130,19 +139,19 @@
             titleLabel.BackColor = Color.Transparent;
             titleLabel.Font = new Font("Segoe UI", 27.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
             titleLabel.ForeColor = Color.Gold;
-            titleLabel.Location = new Point(215, 245);
+            titleLabel.Location = new Point(246, 327);
             titleLabel.Name = "titleLabel";
-            titleLabel.Size = new Size(120, 50);
+            titleLabel.Size = new Size(150, 62);
             titleLabel.TabIndex = 8;
             titleLabel.Text = "Login";
             // 
             // LoginForm
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             BackgroundImage = Properties.Resources.darkerBg;
             BackgroundImageLayout = ImageLayout.Stretch;
-            ClientSize = new Size(551, 681);
+            ClientSize = new Size(630, 908);
             Controls.Add(titleLabel);
             Controls.Add(labelPassword);
             Controls.Add(passwordInput);
@@ -153,11 +162,17 @@
             Controls.Add(usernameInput);
             Controls.Add(bttnLogin);
             FormBorderStyle = FormBorderStyle.None;
+            Margin = new Padding(3, 4, 3, 4);
             Name = "LoginForm";
             Text = "LoginForm";
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             ResumeLayout(false);
             PerformLayout();
+        }
+
+        private void usernameInput_TextChanged(object sender, EventArgs e)
+        {
+            throw new NotImplementedException();
         }
 
         #endregion

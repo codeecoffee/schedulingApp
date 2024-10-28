@@ -64,6 +64,12 @@ public class Helper
         }
     }
 
+    public string ValidateInput(string input)
+    {
+        //TODO! 
+        //Implement ValidateInput method
+        //This should trim and validate inputs as well as compare if passwords are the same;
 
-
+        return input;
+    }
 }

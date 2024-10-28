@@ -63,5 +63,10 @@ namespace schedulingApp
                 MessageBox.Show($"Failed to log the login: {ex.Message}");
             }
         }
+
+        private void labelUsername_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

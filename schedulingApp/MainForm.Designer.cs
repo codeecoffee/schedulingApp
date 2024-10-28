@@ -34,7 +34,6 @@
             bttnCancelAppt = new Button();
             bttnNewAppt = new Button();
             groupBox2 = new GroupBox();
-            button4 = new Button();
             bttnEditCustomer = new Button();
             bttnNewCustomer = new Button();
             calendarPanel = new TableLayoutPanel();
@@ -112,7 +111,6 @@
             // groupBox2
             // 
             groupBox2.BackColor = Color.Snow;
-            groupBox2.Controls.Add(button4);
             groupBox2.Controls.Add(bttnEditCustomer);
             groupBox2.Controls.Add(bttnNewCustomer);
             groupBox2.Font = new Font("Segoe UI Semibold", 14.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
@@ -123,27 +121,13 @@
             groupBox2.TabStop = false;
             groupBox2.Text = "Customers";
             // 
-            // button4
-            // 
-            button4.BackColor = Color.Red;
-            button4.Cursor = Cursors.Hand;
-            button4.FlatStyle = FlatStyle.Flat;
-            button4.Font = new Font("Noto Sans", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            button4.ForeColor = Color.White;
-            button4.Location = new Point(66, 106);
-            button4.Name = "button4";
-            button4.Size = new Size(140, 30);
-            button4.TabIndex = 4;
-            button4.Text = "New Appt";
-            button4.UseVisualStyleBackColor = false;
-            // 
             // bttnEditCustomer
             // 
             bttnEditCustomer.BackColor = Color.Yellow;
             bttnEditCustomer.Cursor = Cursors.Hand;
             bttnEditCustomer.FlatStyle = FlatStyle.Flat;
             bttnEditCustomer.Font = new Font("Noto Sans", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            bttnEditCustomer.Location = new Point(66, 68);
+            bttnEditCustomer.Location = new Point(66, 96);
             bttnEditCustomer.Name = "bttnEditCustomer";
             bttnEditCustomer.Size = new Size(140, 30);
             bttnEditCustomer.TabIndex = 3;
@@ -162,6 +146,7 @@
             bttnNewCustomer.TabIndex = 2;
             bttnNewCustomer.Text = "New Customer";
             bttnNewCustomer.UseVisualStyleBackColor = false;
+            bttnNewCustomer.Click += bttnNewCustomer_Click;
             // 
             // calendarPanel
             // 
@@ -237,6 +222,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
+            AutoSizeMode = AutoSizeMode.GrowAndShrink;
             BackgroundImage = Properties.Resources.darkerBg;
             BackgroundImageLayout = ImageLayout.Stretch;
             ClientSize = new Size(1260, 750);
@@ -267,7 +253,6 @@
         private GroupBox groupBox2;
         private Button bttnCancelAppt;
         private Button bttnNewCustomer;
-        private Button button4;
         private Button bttnEditCustomer;
         private TableLayoutPanel calendarPanel;
         private Button bttnPreviosMonth;

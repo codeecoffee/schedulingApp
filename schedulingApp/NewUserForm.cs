@@ -16,5 +16,17 @@ namespace schedulingApp
         {
             InitializeComponent();
         }
+
+        private void bttnRegister_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void bttnExit_Click(object sender, EventArgs e)
+        {
+            LoginForm loginForm = new LoginForm();
+            loginForm.Show();
+            this.Close(); 
+        }
     }
 }

@@ -158,7 +158,7 @@ namespace schedulingApp
                 appointmentList.Items.Add("There are no appointments for this day.");
             }
         }
-        
+
         private void bttnPreviosMonth_Click(object sender, EventArgs e)
         {
             currentMonth = currentMonth.AddMonths(-1);
@@ -178,5 +178,11 @@ namespace schedulingApp
             }
         }
 
+        private void bttnNewCustomer_Click(object sender, EventArgs e)
+        {
+            NewCustomerForm newCustomerForm = new NewCustomerForm();
+            newCustomerForm.Show();
+            this.Hide();
+        }
     }
 }
