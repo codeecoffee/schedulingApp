@@ -147,5 +147,73 @@ namespace schedulingApp
 
             return (true, string.Empty);
         }
+        // New Customer validation methods
+        public static (bool isValid, string message) ValidateCustomerName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return (false, "Customer name is required.");
+
+            if (name.Length > 100)
+                return (false, "Customer name cannot exceed 100 characters.");
+
+            if (!Regex.IsMatch(name, @"^[a-zA-Z\s\-']+$"))
+                return (false, "Customer name can only contain letters, spaces, hyphens, and apostrophes.");
+
+            return (true, string.Empty);
+        }
+        public static (bool isValid, string message) ValidateAddress(string address)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+                return (false, "Address is required.");
+
+            if (address.Length > 200)
+                return (false, "Address cannot exceed 200 characters.");
+
+            // Allow letters, numbers, spaces, and common address characters
+            if (!Regex.IsMatch(address, @"^[a-zA-Z0-9\s\-\.,#']+$"))
+                return (false, "Address contains invalid characters.");
+
+            return (true, string.Empty);
+        }
+        public static (bool isValid, string message) ValidatePhoneNumber(string phone)
+        {
+            if (string.IsNullOrWhiteSpace(phone))
+                return (false, "Phone number is required.");
+
+            // Allow only digits and dashes
+            if (!Regex.IsMatch(phone, @"^[\d\-]+$"))
+                return (false, "Phone number can only contain digits and dashes.");
+
+            // Ensure there's at least some digits
+            if (!Regex.IsMatch(phone, @"\d"))
+                return (false, "Phone number must contain at least one digit.");
+
+            if (phone.Length > 20)
+                return (false, "Phone number is too long.");
+
+            return (true, string.Empty);
+        }
+        public static (bool isValid, string message) ValidateCustomerInput(
+            string customerName,
+            string address,
+            string phoneNumber)
+        {
+            // Validate customer name
+            var (isNameValid, nameMessage) = ValidateCustomerName(customerName);
+            if (!isNameValid)
+                return (false, nameMessage);
+
+            // Validate address
+            var (isAddressValid, addressMessage) = ValidateAddress(address);
+            if (!isAddressValid)
+                return (false, addressMessage);
+
+            // Validate phone number
+            var (isPhoneValid, phoneMessage) = ValidatePhoneNumber(phoneNumber);
+            if (!isPhoneValid)
+                return (false, phoneMessage);
+
+            return (true, string.Empty);
+        }
     }
 }

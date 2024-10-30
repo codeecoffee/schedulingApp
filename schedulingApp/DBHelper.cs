@@ -190,5 +190,183 @@ namespace schedulingApp
                 return false;
             }
         }
+
+        // New method to add a customer
+        public (bool success, string message) AddCustomer(string customerName, string address, string phoneNumber)
+        {
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+
+                    // First check if customer with same phone number exists
+                    string checkQuery = "SELECT COUNT(*) FROM customers WHERE phone_number = @phone";
+                    using (MySqlCommand checkCommand = new MySqlCommand(checkQuery, connection))
+                    {
+                        checkCommand.Parameters.AddWithValue("@phone", phoneNumber);
+                        int count = Convert.ToInt32(checkCommand.ExecuteScalar());
+                        if (count > 0)
+                        {
+                            return (false, "A customer with this phone number already exists.");
+                        }
+                    }
+
+                    // If no duplicate, proceed with insertion
+                    string insertQuery = @"INSERT INTO customers (customer_name, address, phone_number, created_date) 
+                                        VALUES (@name, @address, @phone, @created)";
+
+                    using (MySqlCommand command = new MySqlCommand(insertQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@name", customerName.Trim());
+                        command.Parameters.AddWithValue("@address", address.Trim());
+                        command.Parameters.AddWithValue("@phone", phoneNumber.Trim());
+                        command.Parameters.AddWithValue("@created", DateTime.Now);
+
+                        int rowsAffected = command.ExecuteNonQuery();
+                        return rowsAffected > 0
+                            ? (true, "Customer added successfully!")
+                            : (false, "Failed to add customer.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Error adding customer: {ex.Message}");
+            }
+        }
+
+        // Method to get all customers
+        public DataTable GetAllCustomers()
+        {
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = "SELECT * FROM customers ORDER BY customer_name";
+
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        using (MySqlDataAdapter adapter = new MySqlDataAdapter(command))
+                        {
+                            DataTable customersTable = new DataTable();
+                            adapter.Fill(customersTable);
+                            return customersTable;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving customers: {ex.Message}");
+                return null;
+            }
+        }
+
+        public DataRow GetCustomerById(int customerId)
+        {
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = "SELECT * FROM customers WHERE customer_id = @customerId";
+
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@customerId", customerId);
+
+                        using (MySqlDataAdapter adapter = new MySqlDataAdapter(command))
+                        {
+                            DataTable dataTable = new DataTable();
+                            adapter.Fill(dataTable);
+
+                            return dataTable.Rows.Count > 0 ? dataTable.Rows[0] : null;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving customer: {ex.Message}");
+                return null;
+            }
+        }
+
+        // Method to update existing customer
+        public (bool success, string message) UpdateCustomer(int customerId, string customerName, string address, string phoneNumber)
+        {
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+
+                    // Check if phone number exists for other customers
+                    string checkQuery = "SELECT COUNT(*) FROM customers WHERE phone_number = @phone AND customer_id != @customerId";
+                    using (MySqlCommand checkCommand = new MySqlCommand(checkQuery, connection))
+                    {
+                        checkCommand.Parameters.AddWithValue("@phone", phoneNumber);
+                        checkCommand.Parameters.AddWithValue("@customerId", customerId);
+                        int count = Convert.ToInt32(checkCommand.ExecuteScalar());
+                        if (count > 0)
+                        {
+                            return (false, "This phone number is already assigned to another customer.");
+                        }
+                    }
+
+                    string updateQuery = @"UPDATE customers 
+                                        SET customer_name = @name, 
+                                            address = @address, 
+                                            phone_number = @phone 
+                                        WHERE customer_id = @customerId";
+
+                    using (MySqlCommand command = new MySqlCommand(updateQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@customerId", customerId);
+                        command.Parameters.AddWithValue("@name", customerName.Trim());
+                        command.Parameters.AddWithValue("@address", address.Trim());
+                        command.Parameters.AddWithValue("@phone", phoneNumber.Trim());
+
+                        int rowsAffected = command.ExecuteNonQuery();
+                        return rowsAffected > 0
+                            ? (true, "Customer updated successfully!")
+                            : (false, "No changes were made to the customer.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Error updating customer: {ex.Message}");
+            }
+        }
+
+        // Method to delete customer
+        public (bool success, string message) DeleteCustomer(int customerId)
+        {
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string deleteQuery = "DELETE FROM customers WHERE customer_id = @customerId";
+
+                    using (MySqlCommand command = new MySqlCommand(deleteQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@customerId", customerId);
+
+                        int rowsAffected = command.ExecuteNonQuery();
+                        return rowsAffected > 0
+                            ? (true, "Customer deleted successfully!")
+                            : (false, "Customer not found.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Error deleting customer: {ex.Message}");
+            }
+        }
     }
 }
