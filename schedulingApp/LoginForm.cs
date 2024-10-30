@@ -22,18 +22,38 @@ namespace schedulingApp
             string username = usernameInput.Text;
             string password = passwordInput.Text;
 
-            //need to implement validation 
+            // Validate input
+            var (isValid, message) = ValidationHelper.ValidateLoginInput(username, password);
+            if (!isValid)
+            {
+                MessageBox.Show(message, "Login Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
-            //Log logged in user
-            //LogLogin(username);
+            DatabaseHelper dbHelper = new DatabaseHelper();
 
-            // Open the MainForm          
-            MainForm mainForm = new MainForm();
-            mainForm.Show();
+            if (dbHelper.ValidateUser(username, password))
+            {
+                // Log successful login
+                dbHelper.LogLoginAttempt(username, true);
 
-            this.Hide();
+                // Get user details if needed
+                DataRow userDetails = dbHelper.GetUserDetails(username);
+
+                // Open the MainForm          
+                MainForm mainForm = new MainForm();
+                mainForm.Show();
+
+                this.Hide();
+            }
+            else
+            {
+                // Log failed login attempt
+                dbHelper.LogLoginAttempt(username, false);
+                MessageBox.Show("Invalid username or password.", "Login Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
-
         private void bttnRegister_Click(object sender, EventArgs e)
         {
             this.Hide();
