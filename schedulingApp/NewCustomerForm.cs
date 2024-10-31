@@ -17,14 +17,24 @@ namespace schedulingApp
         {
             try
             {
-                // Get values from form controls and trim them
+                // Get values and trim them
                 string customerName = CustomerNameInput.Text.Trim();
                 string address = CustomerAddressInput.Text.Trim();
+                string address2 = CustomerAddress2Input.Text.Trim();  
+                string city = CustomerCityInput.Text.Trim();         
+                string country = CustomerCountryInput.Text.Trim();    
+                string postalCode = CustomerPostalCodeInput.Text.Trim(); 
                 string phoneNumber = CustomerPhoneInput.Text.Trim();
 
                 // Validate all customer input
                 var (isValid, validationMessage) = ValidationHelper.ValidateCustomerInput(
-                    customerName, address, phoneNumber);
+                    customerName,
+                    address,
+                    address2,
+                    postalCode,
+                    phoneNumber,
+                    city,
+                    country);
 
                 if (!isValid)
                 {
@@ -34,7 +44,14 @@ namespace schedulingApp
                 }
 
                 // Try to add the customer
-                var (success, dbMessage) = dbHelper.AddCustomer(customerName, address, phoneNumber);
+                var (success, dbMessage) = dbHelper.AddCustomer(
+                    customerName,
+                    address,
+                    address2,
+                    city,
+                    country,
+                    postalCode,
+                    phoneNumber);
 
                 if (success)
                 {
@@ -66,8 +83,8 @@ namespace schedulingApp
             this.Close();
         }
 
-        
-        private void customerNameTextBox_Leave(object sender, EventArgs e)
+
+        private void CustomerNameInput_Leave(object sender, EventArgs e)
         {
             var (isValid, message) = ValidationHelper.ValidateCustomerName(CustomerNameInput.Text.Trim());
             if (!isValid)
@@ -77,8 +94,7 @@ namespace schedulingApp
                 CustomerNameInput.Focus();
             }
         }
-
-        private void addressTextBox_Leave(object sender, EventArgs e)
+        private void CustomerAddressInput_Leave(object sender, EventArgs e)
         {
             var (isValid, message) = ValidationHelper.ValidateAddress(CustomerAddressInput.Text.Trim());
             if (!isValid)
@@ -88,10 +104,49 @@ namespace schedulingApp
                 CustomerAddressInput.Focus();
             }
         }
-
-        private void phoneNumberTextBox_Leave(object sender, EventArgs e)
+        private void CustomerAddress2Input_Leave(object sender, EventArgs e)
         {
-            var (isValid, message) = ValidationHelper.ValidatePhoneNumber(CustomerPhoneInput.Text.Trim());
+            var (isValid, message) = ValidationHelper.ValidateAddress2(CustomerAddress2Input.Text.Trim());
+            if (!isValid)
+            {
+                MessageBox.Show(message, "Validation Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                CustomerAddress2Input.Focus();
+            }
+        }
+        private void CustomerCityInput_Leave(object sender, EventArgs e)
+        {
+            var (isValid, message) = ValidationHelper.ValidateCity(CustomerCityInput.Text.Trim());
+            if (!isValid)
+            {
+                MessageBox.Show(message, "Validation Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                CustomerCityInput.Focus();
+            }
+        }
+        private void CustomerCountryInput_Leave(object sender, EventArgs e)
+        {
+            var (isValid, message) = ValidationHelper.ValidateCountry(CustomerCountryInput.Text.Trim());
+            if (!isValid)
+            {
+                MessageBox.Show(message, "Validation Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                CustomerCountryInput.Focus();
+            }
+        }
+        private void CustomerPostalCodeInput_Leave(object sender, EventArgs e)
+        {
+            var (isValid, message) = ValidationHelper.ValidatePostalCode(CustomerPostalCodeInput.Text.Trim());
+            if (!isValid)
+            {
+                MessageBox.Show(message, "Validation Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                CustomerPostalCodeInput.Focus();
+            }
+        }
+        private void CustomerPhoneInput_Leave(object sender, EventArgs e)
+        {
+            var (isValid, message) = ValidationHelper.ValidatePhone(CustomerPhoneInput.Text.Trim());
             if (!isValid)
             {
                 MessageBox.Show(message, "Validation Error",

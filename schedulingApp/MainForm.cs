@@ -12,24 +12,68 @@ namespace schedulingApp
 {
     public partial class MainForm : Form
     {
+        private readonly DatabaseHelper dbHelper;
         private DateTime currentMonth = DateTime.Now;
-        private Dictionary<DateTime, List<string>> appointments;
+        private DateTime? selectedDate = null;
+
+        private Dictionary<DateTime, List<string>> appointments; //old
 
         public MainForm()
         {
-            //Application.EnableVisualStyles();
-            //Application.SetCompatibleTextRenderingDefault(false);
-            //Application.Run(new MainForm());
+
             InitializeComponent();
+            dbHelper = new DatabaseHelper();
             StartComp();
             LoadAppointments();
             DisplayCalendar();
             ConfigureAppointmentList();
         }
+
+
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
             this.DoubleBuffered = true;  // Enable double buffering for the entire form
+        }
+
+        private void LoadAppointments()
+        {
+            //appointments = new Dictionary<DateTime, List<string>>
+            //{
+            //    { new DateTime(DateTime.Now.Year, DateTime.Now.Month, 5),
+            //        new List<string> { "John Doe at 10:00 AM", "Jane Smith at 2:00 PM" } },
+            //    { new DateTime(DateTime.Now.Year, DateTime.Now.Month, 18),
+            //        new List<string> { "Client Meeting at 11:00 AM" } }
+            //};
+            UpdateAppointmentList();
+        }
+
+        private void UpdateAppointmentList()
+        {
+            appointmentList.Items.Clear();
+
+            DataTable appointments;
+            if (selectedDate.HasValue)
+            {
+                appointments = dbHelper.GetAppointmentsByDate(selectedDate.Value);
+            }
+            else
+            {
+                appointments = dbHelper.GetAllAppointments();
+            }
+
+            if (appointments == null || appointments.Rows.Count == 0)
+            {
+                appointmentList.Items.Add("No appointments registered yet. Consider creating one");
+                return;
+            }
+
+            foreach (DataRow row in appointments.Rows)
+            {
+                string appointmentInfo = $"{row["customerName"]} - {Convert.ToDateTime(row["start"]).ToString("h:mm tt")}" +
+                                       $"\n{row["type"]}: {row["description"]}";
+                appointmentList.Items.Add(appointmentInfo);
+            }
         }
 
         //[STAThread]
@@ -47,16 +91,7 @@ namespace schedulingApp
             appointmentList.DrawItem += AppointmentList_DrawItem;
         }
         // Load sample appointments (you can load from a database here)
-        private void LoadAppointments()
-        {
-            appointments = new Dictionary<DateTime, List<string>>
-            {
-                { new DateTime(DateTime.Now.Year, DateTime.Now.Month, 5),
-                    new List<string> { "John Doe at 10:00 AM", "Jane Smith at 2:00 PM" } },
-                { new DateTime(DateTime.Now.Year, DateTime.Now.Month, 18),
-                    new List<string> { "Client Meeting at 11:00 AM" } }
-            };
-        }
+
         // Custom rendering for appointment items
         private void AppointmentList_DrawItem(object sender, DrawItemEventArgs e)
         {
@@ -111,52 +146,79 @@ namespace schedulingApp
             DateTime firstDayOfMonth = new DateTime(currentMonth.Year, currentMonth.Month, 1);
             int daysInMonth = DateTime.DaysInMonth(currentMonth.Year, currentMonth.Month);
 
-            labelMonth.Text = currentMonth.ToString("MMM yyyy");
+            labelMonth.Text = currentMonth.ToString("MMMM yyyy");
 
-            // Add day labels (Sun, Mon, ...)
+            // Add day labels
+            string[] dayNames = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
             for (int i = 0; i < 7; i++)
             {
-                calendarPanel.Controls.Add(new Label
+                Label dayLabel = new Label
                 {
-                    Text = Enum.GetName(typeof(DayOfWeek), i).Substring(0, 3),
+                    Text = dayNames[i],
                     TextAlign = ContentAlignment.MiddleCenter,
-                    AutoSize = true
-                });
+                    Dock = DockStyle.Fill,
+                    Font = new Font("Arial", 9, FontStyle.Bold),
+                    ForeColor = Color.White
+                };
+                calendarPanel.Controls.Add(dayLabel, i, 0);
             }
 
-            // Get the day of the week the month starts on
+            // Get appointment counts for the month
+            var appointmentCounts = dbHelper.GetMonthlyAppointmentCounts(currentMonth);
+
             int dayOffset = (int)firstDayOfMonth.DayOfWeek;
 
-            // Create buttons for each day of the month
+            // Create buttons for each day
             for (int day = 1; day <= daysInMonth; day++)
             {
                 DateTime date = new DateTime(currentMonth.Year, currentMonth.Month, day);
                 Button dayButton = new Button
                 {
                     Text = day.ToString(),
-                    BackColor = appointments.ContainsKey(date) ? Color.LightGreen : Color.White, // Highlight days with appointments
-                    Dock = DockStyle.Fill
+                    Dock = DockStyle.Fill,
+                    Tag = date,
+                    FlatStyle = FlatStyle.Flat
                 };
+
+                // Style the button based on appointments
+                if (appointmentCounts.ContainsKey(date))
+                {
+                    dayButton.BackColor = Color.LightGreen;
+                    dayButton.Text = $"{day}\n({appointmentCounts[date]})";
+                }
+                else
+                {
+                    dayButton.BackColor = Color.White;
+                }
+
+                // Highlight selected date
+                if (selectedDate.HasValue && date.Date == selectedDate.Value.Date)
+                {
+                    dayButton.BackColor = Color.Yellow;
+                }
 
                 dayButton.Click += (sender, e) => OnDaySelected(date);
                 calendarPanel.Controls.Add(dayButton, (dayOffset + day - 1) % 7, (dayOffset + day - 1) / 7 + 1);
             }
-            // Resume layout to finalize changes and prevent flicker
+
             calendarPanel.ResumeLayout();
         }
+
         // Handle when a day is clicked
         private void OnDaySelected(DateTime date)
         {
-            appointmentList.Items.Clear();
-
-            if (appointments.ContainsKey(date))
+            if (selectedDate.HasValue && selectedDate.Value.Date == date.Date)
             {
-                appointmentList.Items.AddRange(appointments[date].ToArray());
+                // Deselect the date if it's already selected
+                selectedDate = null;
             }
             else
             {
-                appointmentList.Items.Add("There are no appointments for this day.");
+                selectedDate = date;
             }
+
+            DisplayCalendar(); // Refresh calendar to show selection
+            UpdateAppointmentList(); // Update appointment list for selected date
         }
 
         private void bttnPreviosMonth_Click(object sender, EventArgs e)

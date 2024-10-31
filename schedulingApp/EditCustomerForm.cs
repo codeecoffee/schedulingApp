@@ -33,14 +33,18 @@ namespace schedulingApp
                 DataTable customers = dbHelper.GetAllCustomers();
                 customersDataGridView.DataSource = customers;
 
-                // Optionally hide certain columns
-                customersDataGridView.Columns["customer_id"].Visible = false;
-                customersDataGridView.Columns["created_date"].Visible = false;
+                // Hide system columns
+                customersDataGridView.Columns["customerId"].Visible = false;
+                customersDataGridView.Columns["active"].Visible = false;
 
                 // Rename displayed columns
-                customersDataGridView.Columns["customer_name"].HeaderText = "Name";
+                customersDataGridView.Columns["customerName"].HeaderText = "Name";
                 customersDataGridView.Columns["address"].HeaderText = "Address";
-                customersDataGridView.Columns["phone_number"].HeaderText = "Phone";
+                customersDataGridView.Columns["address2"].HeaderText = "Address 2";
+                customersDataGridView.Columns["city"].HeaderText = "City";
+                customersDataGridView.Columns["postalCode"].HeaderText = "Postal Code";
+                customersDataGridView.Columns["phone"].HeaderText = "Phone";
+                customersDataGridView.Columns["country"].HeaderText = "Country";
 
                 // Auto-size columns
                 customersDataGridView.AutoResizeColumns();
@@ -52,31 +56,6 @@ namespace schedulingApp
             }
         }
 
-        private void customersDataGridView_SelectionChanged(object sender, EventArgs e)
-        {
-            if (customersDataGridView.SelectedRows.Count > 0)
-            {
-                DataGridViewRow row = customersDataGridView.SelectedRows[0];
-                currentCustomerId = Convert.ToInt32(row.Cells["customer_id"].Value);
-
-                // Populate the text boxes
-                CustomerNameInput.Text = row.Cells["customer_name"].Value.ToString();
-                CustomerAddressInput.Text = row.Cells["address"].Value.ToString();
-                CustomerPhoneInput.Text = row.Cells["phone_number"].Value.ToString();
-
-                // Enable modification controls
-                bttnModify.Enabled = true;
-                bttnDeleteCustomer.Enabled = true;
-            }
-            else
-            {
-                // Clear and disable controls when no selection
-                //ClearFields();
-                bttnModify.Enabled = false;
-                bttnDeleteCustomer.Enabled = false;
-
-            }
-        }
         private void bttnModify_Click(object sender, EventArgs e)
         {
             if (currentCustomerId == -1)
@@ -86,11 +65,24 @@ namespace schedulingApp
                 return;
             }
 
-            // Validate input
+            // Get values from form controls and trim them
+            string customerName = CustomerNameInput.Text.Trim();
+            string address = CustomerAddressInput.Text.Trim();
+            string address2 = CustomerAddress2Input.Text.Trim();
+            string city = CustomerCityInput.Text.Trim();
+            string country = CustomerCountryInput.Text.Trim();
+            string postalCode = CustomerPostalCodeInput.Text.Trim();
+            string phoneNumber = CustomerPhoneInput.Text.Trim();
+
+            // Validate all customer input
             var (isValid, validationMessage) = ValidationHelper.ValidateCustomerInput(
-                CustomerNameInput.Text.Trim(),
-                CustomerAddressInput.Text.Trim(),
-                CustomerPhoneInput.Text.Trim());
+                customerName,
+                address,
+                address2,
+                postalCode,
+                phoneNumber,
+                city,
+                country);
 
             if (!isValid)
             {
@@ -99,12 +91,16 @@ namespace schedulingApp
                 return;
             }
 
-            // Update customer
+            // Update customer with all fields
             var (success, message) = dbHelper.UpdateCustomer(
                 currentCustomerId,
-                CustomerNameInput.Text.Trim(),
-                CustomerAddressInput.Text.Trim(),
-                CustomerPhoneInput.Text.Trim());
+                customerName,
+                address,
+                address2,
+                city,
+                country,
+                postalCode,
+                phoneNumber);
 
             MessageBox.Show(message, success ? "Success" : "Error",
                 MessageBoxButtons.OK, success ? MessageBoxIcon.Information : MessageBoxIcon.Error);
@@ -151,8 +147,13 @@ namespace schedulingApp
             currentCustomerId = -1;
             CustomerNameInput.Text = string.Empty;
             CustomerAddressInput.Text = string.Empty;
+            CustomerAddress2Input.Text = string.Empty;
+            CustomerCityInput.Text = string.Empty;
+            CustomerCountryInput.Text = string.Empty;
+            CustomerPostalCodeInput.Text = string.Empty;
             CustomerPhoneInput.Text = string.Empty;
         }
+
 
         private void bttnExit_Click(object sender, EventArgs e)
         {

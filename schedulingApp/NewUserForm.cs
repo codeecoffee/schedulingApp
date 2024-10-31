@@ -15,16 +15,11 @@ namespace schedulingApp
 
         private void bttnRegister_Click(object sender, EventArgs e)
         {
-            string username = usernameTextBox.Text.Trim();
-            string password = passwordTextBox.Text;
-            string confirmPassword = confirmPasswordTextBox.Text;
-            string email = emailTextBox.Text.Trim();
-            string firstName = firstNameTextBox.Text.Trim();
-            string lastName = lastNameTextBox.Text.Trim();
+            string username = userNameInput.Text.Trim();
+            string password = PasswordInput.Text;
+            string confirmPassword = PasswordConfirmation.Text;
 
-            // Validate all registration input
-            var (isValid, message) = ValidationHelper.ValidateRegistrationInput(
-                username, password, confirmPassword, email, firstName, lastName);
+            var (isValid, message) = ValidationHelper.ValidateLoginInput(username, password);
 
             if (!isValid)
             {
@@ -33,8 +28,16 @@ namespace schedulingApp
                 return;
             }
 
+            // Check if passwords match
+            if (password != confirmPassword)
+            {
+                MessageBox.Show("Passwords do not match.", "Registration Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             // Attempt to register the user
-            var (success, dbMessage) = dbHelper.RegisterUser(username, password, email, firstName, lastName);
+            var (success, dbMessage) = dbHelper.RegisterUser(username, password);
 
             if (success)
             {
@@ -50,18 +53,6 @@ namespace schedulingApp
             {
                 MessageBox.Show(dbMessage, "Registration Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-        private bool IsValidEmail(string email)
-        {
-            try
-            {
-                var addr = new System.Net.Mail.MailAddress(email);
-                return addr.Address == email;
-            }
-            catch
-            {
-                return false;
             }
         }
 

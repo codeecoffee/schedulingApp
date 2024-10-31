@@ -3,16 +3,33 @@ using System;
 using System.Data;
 using System.Configuration;
 
+
 namespace schedulingApp
 {
     public class DatabaseHelper
     {
         private readonly string connectionString;
+        private readonly string currentUser;
 
-        public DatabaseHelper()
+        public DatabaseHelper(string currentUser = "system")
         {
-            // You should store this in app.config or similar in production
-            connectionString = "Server=localhost;Database=schedulingdb;Uid=your_username;Pwd=your_password;";
+            connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
+            this.currentUser = currentUser;
+        }
+        public bool TestConnection()
+        {
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    return true;
+                }
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         // Method to validate user credentials
@@ -23,15 +40,11 @@ namespace schedulingApp
                 using (MySqlConnection connection = new MySqlConnection(connectionString))
                 {
                     connection.Open();
-
-                    // Use parameterized query to prevent SQL injection
-                    string query = "SELECT COUNT(*) FROM users WHERE username = @username AND password = @password";
+                    string query = "SELECT COUNT(*) FROM user WHERE userName = @username AND password = @password AND active = 1";
 
                     using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
-                        // Add parameters
                         command.Parameters.AddWithValue("@username", username);
-                        // In production, you should hash the password
                         command.Parameters.AddWithValue("@password", password);
 
                         int count = Convert.ToInt32(command.ExecuteScalar());
@@ -41,13 +54,12 @@ namespace schedulingApp
             }
             catch (Exception ex)
             {
-                // Log the exception in production
                 Console.WriteLine($"Database error: {ex.Message}");
                 return false;
             }
         }
 
-        // New method to check if username already exists
+        // method to check if username already exists
         public bool UsernameExists(string username)
         {
             try
@@ -71,13 +83,12 @@ namespace schedulingApp
                 return true; // Return true on error to prevent registration
             }
         }
-
-        // New method to register a new user
-        public (bool success, string message) RegisterUser(string username, string password, string email, string firstName, string lastName)
+        // method to register a new user
+        public (bool success, string message) RegisterUser(string username, string password)
         {
             try
             {
-                // Check if username already exists
+                // First check if username already exists
                 if (UsernameExists(username))
                 {
                     return (false, "Username already exists.");
@@ -87,17 +98,20 @@ namespace schedulingApp
                 {
                     connection.Open();
 
-                    string query = @"INSERT INTO users (username, password, email, first_name, last_name) 
-                                   VALUES (@username, @password, @email, @firstName, @lastName)";
+                    string query = @"INSERT INTO user 
+                (userName, password, active, createDate, createdBy, lastUpdate, lastUpdateBy) 
+                VALUES 
+                (@username, @password, 1, @createDate, @createdBy, @lastUpdate, @lastUpdateBy)";
 
                     using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
+                        DateTime now = DateTime.Now;
                         command.Parameters.AddWithValue("@username", username);
-                        // In production, you should hash the password
                         command.Parameters.AddWithValue("@password", password);
-                        command.Parameters.AddWithValue("@email", email);
-                        command.Parameters.AddWithValue("@firstName", firstName);
-                        command.Parameters.AddWithValue("@lastName", lastName);
+                        command.Parameters.AddWithValue("@createDate", now);
+                        command.Parameters.AddWithValue("@createdBy", "system");
+                        command.Parameters.AddWithValue("@lastUpdate", now);
+                        command.Parameters.AddWithValue("@lastUpdateBy", "system");
 
                         int rowsAffected = command.ExecuteNonQuery();
                         return rowsAffected > 0
@@ -111,8 +125,6 @@ namespace schedulingApp
                 return (false, $"Registration error: {ex.Message}");
             }
         }
-
-        // Existing methods remain the same...
         public DataRow GetUserDetails(string username)
         {
             try
@@ -174,59 +186,117 @@ namespace schedulingApp
                 Console.WriteLine($"Failed to log login attempt: {ex.Message}");
             }
         }
-
-        public bool TestConnection()
+               
+        private int InsertCountry(MySqlConnection connection, string countryName)
         {
-            try
+            string query = @"INSERT INTO country (country, createDate, createdBy, lastUpdate, lastUpdateBy) 
+                           VALUES (@country, @createDate, @createdBy, @lastUpdate, @lastUpdateBy);
+                           SELECT LAST_INSERT_ID();";
+
+            using (MySqlCommand command = new MySqlCommand(query, connection))
             {
-                using (MySqlConnection connection = new MySqlConnection(connectionString))
-                {
-                    connection.Open();
-                    return true;
-                }
-            }
-            catch
-            {
-                return false;
+                DateTime now = DateTime.Now;
+                command.Parameters.AddWithValue("@country", countryName);
+                command.Parameters.AddWithValue("@createDate", now);
+                command.Parameters.AddWithValue("@createdBy", currentUser);
+                command.Parameters.AddWithValue("@lastUpdate", now);
+                command.Parameters.AddWithValue("@lastUpdateBy", currentUser);
+
+                return Convert.ToInt32(command.ExecuteScalar());
             }
         }
 
-        // New method to add a customer
-        public (bool success, string message) AddCustomer(string customerName, string address, string phoneNumber)
+        private int InsertCity(MySqlConnection connection, string cityName, int countryId)
+        {
+            string query = @"INSERT INTO city (city, countryId, createDate, createdBy, lastUpdate, lastUpdateBy) 
+                           VALUES (@city, @countryId, @createDate, @createdBy, @lastUpdate, @lastUpdateBy);
+                           SELECT LAST_INSERT_ID();";
+
+            using (MySqlCommand command = new MySqlCommand(query, connection))
+            {
+                DateTime now = DateTime.Now;
+                command.Parameters.AddWithValue("@city", cityName);
+                command.Parameters.AddWithValue("@countryId", countryId);
+                command.Parameters.AddWithValue("@createDate", now);
+                command.Parameters.AddWithValue("@createdBy", currentUser);
+                command.Parameters.AddWithValue("@lastUpdate", now);
+                command.Parameters.AddWithValue("@lastUpdateBy", currentUser);
+
+                return Convert.ToInt32(command.ExecuteScalar());
+            }
+        }
+
+        private int InsertAddress(MySqlConnection connection, string address1, string address2, int cityId, string postalCode, string phone)
+        {
+            string query = @"INSERT INTO address (address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdate, lastUpdateBy) 
+                           VALUES (@address, @address2, @cityId, @postalCode, @phone, @createDate, @createdBy, @lastUpdate, @lastUpdateBy);
+                           SELECT LAST_INSERT_ID();";
+
+            using (MySqlCommand command = new MySqlCommand(query, connection))
+            {
+                DateTime now = DateTime.Now;
+                command.Parameters.AddWithValue("@address", address1);
+                command.Parameters.AddWithValue("@address2", address2 ?? "");
+                command.Parameters.AddWithValue("@cityId", cityId);
+                command.Parameters.AddWithValue("@postalCode", postalCode);
+                command.Parameters.AddWithValue("@phone", phone);
+                command.Parameters.AddWithValue("@createDate", now);
+                command.Parameters.AddWithValue("@createdBy", currentUser);
+                command.Parameters.AddWithValue("@lastUpdate", now);
+                command.Parameters.AddWithValue("@lastUpdateBy", currentUser);
+
+                return Convert.ToInt32(command.ExecuteScalar());
+            }
+        }
+
+        public (bool success, string message) AddCustomer(string customerName, string address1, string address2,
+                   string city, string country, string postalCode, string phone)
         {
             try
             {
                 using (MySqlConnection connection = new MySqlConnection(connectionString))
                 {
                     connection.Open();
-
-                    // First check if customer with same phone number exists
-                    string checkQuery = "SELECT COUNT(*) FROM customers WHERE phone_number = @phone";
-                    using (MySqlCommand checkCommand = new MySqlCommand(checkQuery, connection))
+                    using (MySqlTransaction transaction = connection.BeginTransaction())
                     {
-                        checkCommand.Parameters.AddWithValue("@phone", phoneNumber);
-                        int count = Convert.ToInt32(checkCommand.ExecuteScalar());
-                        if (count > 0)
+                        try
                         {
-                            return (false, "A customer with this phone number already exists.");
+                            // Insert country
+                            int countryId = InsertCountry(connection, country);
+
+                            // Insert city
+                            int cityId = InsertCity(connection, city, countryId);
+
+                            // Insert address
+                            int addressId = InsertAddress(connection, address1, address2, cityId, postalCode, phone);
+
+                            // Insert customer
+                            string customerQuery = @"INSERT INTO customer 
+                                (customerName, addressId, active, createDate, createdBy, lastUpdate, lastUpdateBy)
+                                VALUES 
+                                (@customerName, @addressId, 1, @createDate, @createdBy, @lastUpdate, @lastUpdateBy)";
+
+                            using (MySqlCommand command = new MySqlCommand(customerQuery, connection))
+                            {
+                                DateTime now = DateTime.Now;
+                                command.Parameters.AddWithValue("@customerName", customerName);
+                                command.Parameters.AddWithValue("@addressId", addressId);
+                                command.Parameters.AddWithValue("@createDate", now);
+                                command.Parameters.AddWithValue("@createdBy", currentUser);
+                                command.Parameters.AddWithValue("@lastUpdate", now);
+                                command.Parameters.AddWithValue("@lastUpdateBy", currentUser);
+
+                                command.ExecuteNonQuery();
+                            }
+
+                            transaction.Commit();
+                            return (true, "Customer added successfully!");
                         }
-                    }
-
-                    // If no duplicate, proceed with insertion
-                    string insertQuery = @"INSERT INTO customers (customer_name, address, phone_number, created_date) 
-                                        VALUES (@name, @address, @phone, @created)";
-
-                    using (MySqlCommand command = new MySqlCommand(insertQuery, connection))
-                    {
-                        command.Parameters.AddWithValue("@name", customerName.Trim());
-                        command.Parameters.AddWithValue("@address", address.Trim());
-                        command.Parameters.AddWithValue("@phone", phoneNumber.Trim());
-                        command.Parameters.AddWithValue("@created", DateTime.Now);
-
-                        int rowsAffected = command.ExecuteNonQuery();
-                        return rowsAffected > 0
-                            ? (true, "Customer added successfully!")
-                            : (false, "Failed to add customer.");
+                        catch (Exception ex)
+                        {
+                            transaction.Rollback();
+                            throw new Exception($"Error in transaction: {ex.Message}");
+                        }
                     }
                 }
             }
@@ -236,7 +306,7 @@ namespace schedulingApp
             }
         }
 
-        // Method to get all customers
+        // Get them all!!
         public DataTable GetAllCustomers()
         {
             try
@@ -244,7 +314,22 @@ namespace schedulingApp
                 using (MySqlConnection connection = new MySqlConnection(connectionString))
                 {
                     connection.Open();
-                    string query = "SELECT * FROM customers ORDER BY customer_name";
+                    string query = @"
+                        SELECT 
+                            c.customerId,
+                            c.customerName,
+                            a.address,
+                            a.address2,
+                            a.postalCode,
+                            a.phone,
+                            ci.city,
+                            co.country,
+                            c.active
+                        FROM customer c
+                        JOIN address a ON c.addressId = a.addressId
+                        JOIN city ci ON a.cityId = ci.cityId
+                        JOIN country co ON ci.countryId = co.countryId
+                        ORDER BY c.customerName";
 
                     using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
@@ -263,7 +348,6 @@ namespace schedulingApp
                 return null;
             }
         }
-
         public DataRow GetCustomerById(int customerId)
         {
             try
@@ -294,45 +378,146 @@ namespace schedulingApp
             }
         }
 
-        // Method to update existing customer
-        public (bool success, string message) UpdateCustomer(int customerId, string customerName, string address, string phoneNumber)
+        // Customer update
+        public (bool success, string message) UpdateCustomer(
+        int customerId,
+        string customerName,
+        string address1,
+        string address2,
+        string city,
+        string country,
+        string postalCode,
+        string phone)
         {
             try
             {
                 using (MySqlConnection connection = new MySqlConnection(connectionString))
                 {
                     connection.Open();
-
-                    // Check if phone number exists for other customers
-                    string checkQuery = "SELECT COUNT(*) FROM customers WHERE phone_number = @phone AND customer_id != @customerId";
-                    using (MySqlCommand checkCommand = new MySqlCommand(checkQuery, connection))
+                    using (MySqlTransaction transaction = connection.BeginTransaction())
                     {
-                        checkCommand.Parameters.AddWithValue("@phone", phoneNumber);
-                        checkCommand.Parameters.AddWithValue("@customerId", customerId);
-                        int count = Convert.ToInt32(checkCommand.ExecuteScalar());
-                        if (count > 0)
+                        try
                         {
-                            return (false, "This phone number is already assigned to another customer.");
+                            // Get current customer data for comparison
+                            string getCurrentDataQuery = @"
+                            SELECT 
+                                c.addressId,
+                                a.cityId,
+                                ci.countryId,
+                                a.address,
+                                ci.city,
+                                co.country
+                            FROM customer c
+                            JOIN address a ON c.addressId = a.addressId
+                            JOIN city ci ON a.cityId = ci.cityId
+                            JOIN country co ON ci.countryId = co.countryId
+                            WHERE c.customerId = @customerId";
+
+                            int currentAddressId, currentCityId, currentCountryId;
+                            using (MySqlCommand command = new MySqlCommand(getCurrentDataQuery, connection))
+                            {
+                                command.Parameters.AddWithValue("@customerId", customerId);
+                                using (MySqlDataReader reader = command.ExecuteReader())
+                                {
+                                    if (!reader.Read())
+                                    {
+                                        return (false, "Customer not found.");
+                                    }
+                                    currentAddressId = reader.GetInt32("addressId");
+                                    currentCityId = reader.GetInt32("cityId");
+                                    currentCountryId = reader.GetInt32("countryId");
+                                }
+                            }
+
+                            // Update country or create new if changed
+                            int countryId = currentCountryId;
+                            string checkCountryQuery = "SELECT countryId FROM country WHERE country = @country";
+                            using (MySqlCommand command = new MySqlCommand(checkCountryQuery, connection))
+                            {
+                                command.Parameters.AddWithValue("@country", country);
+                                object result = command.ExecuteScalar();
+                                if (result == null)
+                                {
+                                    countryId = InsertCountry(connection, country);
+                                }
+                                else
+                                {
+                                    countryId = Convert.ToInt32(result);
+                                }
+                            }
+
+                            // Update city or create new if changed
+                            int cityId = currentCityId;
+                            string checkCityQuery = "SELECT cityId FROM city WHERE city = @city AND countryId = @countryId";
+                            using (MySqlCommand command = new MySqlCommand(checkCityQuery, connection))
+                            {
+                                command.Parameters.AddWithValue("@city", city);
+                                command.Parameters.AddWithValue("@countryId", countryId);
+                                object result = command.ExecuteScalar();
+                                if (result == null)
+                                {
+                                    cityId = InsertCity(connection, city, countryId);
+                                }
+                                else
+                                {
+                                    cityId = Convert.ToInt32(result);
+                                }
+                            }
+
+                            // Update address
+                            string updateAddressQuery = @"
+                            UPDATE address 
+                            SET 
+                                address = @address,
+                                address2 = @address2,
+                                cityId = @cityId,
+                                postalCode = @postalCode,
+                                phone = @phone,
+                                lastUpdate = @lastUpdate,
+                                lastUpdateBy = @lastUpdateBy
+                            WHERE addressId = @addressId";
+
+                            using (MySqlCommand command = new MySqlCommand(updateAddressQuery, connection))
+                            {
+                                DateTime now = DateTime.Now;
+                                command.Parameters.AddWithValue("@addressId", currentAddressId);
+                                command.Parameters.AddWithValue("@address", address1);
+                                command.Parameters.AddWithValue("@address2", address2 ?? "");
+                                command.Parameters.AddWithValue("@cityId", cityId);
+                                command.Parameters.AddWithValue("@postalCode", postalCode);
+                                command.Parameters.AddWithValue("@phone", phone);
+                                command.Parameters.AddWithValue("@lastUpdate", now);
+                                command.Parameters.AddWithValue("@lastUpdateBy", currentUser);
+                                command.ExecuteNonQuery();
+                            }
+
+                            // Update customer
+                            string updateCustomerQuery = @"
+                            UPDATE customer 
+                            SET 
+                                customerName = @customerName,
+                                lastUpdate = @lastUpdate,
+                                lastUpdateBy = @lastUpdateBy
+                            WHERE customerId = @customerId";
+
+                            using (MySqlCommand command = new MySqlCommand(updateCustomerQuery, connection))
+                            {
+                                DateTime now = DateTime.Now;
+                                command.Parameters.AddWithValue("@customerId", customerId);
+                                command.Parameters.AddWithValue("@customerName", customerName);
+                                command.Parameters.AddWithValue("@lastUpdate", now);
+                                command.Parameters.AddWithValue("@lastUpdateBy", currentUser);
+                                command.ExecuteNonQuery();
+                            }
+
+                            transaction.Commit();
+                            return (true, "Customer updated successfully!");
                         }
-                    }
-
-                    string updateQuery = @"UPDATE customers 
-                                        SET customer_name = @name, 
-                                            address = @address, 
-                                            phone_number = @phone 
-                                        WHERE customer_id = @customerId";
-
-                    using (MySqlCommand command = new MySqlCommand(updateQuery, connection))
-                    {
-                        command.Parameters.AddWithValue("@customerId", customerId);
-                        command.Parameters.AddWithValue("@name", customerName.Trim());
-                        command.Parameters.AddWithValue("@address", address.Trim());
-                        command.Parameters.AddWithValue("@phone", phoneNumber.Trim());
-
-                        int rowsAffected = command.ExecuteNonQuery();
-                        return rowsAffected > 0
-                            ? (true, "Customer updated successfully!")
-                            : (false, "No changes were made to the customer.");
+                        catch (Exception ex)
+                        {
+                            transaction.Rollback();
+                            throw new Exception($"Error in transaction: {ex.Message}");
+                        }
                     }
                 }
             }
@@ -342,7 +527,6 @@ namespace schedulingApp
             }
         }
 
-        // Method to delete customer
         public (bool success, string message) DeleteCustomer(int customerId)
         {
             try
@@ -350,22 +534,248 @@ namespace schedulingApp
                 using (MySqlConnection connection = new MySqlConnection(connectionString))
                 {
                     connection.Open();
-                    string deleteQuery = "DELETE FROM customers WHERE customer_id = @customerId";
-
-                    using (MySqlCommand command = new MySqlCommand(deleteQuery, connection))
+                    using (MySqlTransaction transaction = connection.BeginTransaction())
                     {
-                        command.Parameters.AddWithValue("@customerId", customerId);
+                        try
+                        {
+                            // First, check if customer has any appointments
+                            string checkAppointmentsQuery = "SELECT COUNT(*) FROM appointment WHERE customerId = @customerId";
+                            using (MySqlCommand command = new MySqlCommand(checkAppointmentsQuery, connection))
+                            {
+                                command.Parameters.AddWithValue("@customerId", customerId);
+                                int appointmentCount = Convert.ToInt32(command.ExecuteScalar());
+                                if (appointmentCount > 0)
+                                {
+                                    return (false, "Cannot delete customer with existing appointments. Please delete appointments first.");
+                                }
+                            }
 
-                        int rowsAffected = command.ExecuteNonQuery();
-                        return rowsAffected > 0
-                            ? (true, "Customer deleted successfully!")
-                            : (false, "Customer not found.");
+                            // Get the addressId for the customer
+                            string getAddressIdQuery = "SELECT addressId FROM customer WHERE customerId = @customerId";
+                            int addressId;
+                            using (MySqlCommand command = new MySqlCommand(getAddressIdQuery, connection))
+                            {
+                                command.Parameters.AddWithValue("@customerId", customerId);
+                                object result = command.ExecuteScalar();
+                                if (result == null)
+                                {
+                                    return (false, "Customer not found.");
+                                }
+                                addressId = Convert.ToInt32(result);
+                            }
+
+                            // Delete the customer
+                            string deleteCustomerQuery = "DELETE FROM customer WHERE customerId = @customerId";
+                            using (MySqlCommand command = new MySqlCommand(deleteCustomerQuery, connection))
+                            {
+                                command.Parameters.AddWithValue("@customerId", customerId);
+                                command.ExecuteNonQuery();
+                            }
+
+                            // Get cityId from address
+                            string getCityIdQuery = "SELECT cityId FROM address WHERE addressId = @addressId";
+                            int cityId;
+                            using (MySqlCommand command = new MySqlCommand(getCityIdQuery, connection))
+                            {
+                                command.Parameters.AddWithValue("@addressId", addressId);
+                                cityId = Convert.ToInt32(command.ExecuteScalar());
+                            }
+
+                            // Delete the address
+                            string deleteAddressQuery = "DELETE FROM address WHERE addressId = @addressId";
+                            using (MySqlCommand command = new MySqlCommand(deleteAddressQuery, connection))
+                            {
+                                command.Parameters.AddWithValue("@addressId", addressId);
+                                command.ExecuteNonQuery();
+                            }
+
+                            // Check if city has other addresses
+                            string checkCityQuery = "SELECT COUNT(*) FROM address WHERE cityId = @cityId";
+                            using (MySqlCommand command = new MySqlCommand(checkCityQuery, connection))
+                            {
+                                command.Parameters.AddWithValue("@cityId", cityId);
+                                int addressCount = Convert.ToInt32(command.ExecuteScalar());
+                                if (addressCount == 0)
+                                {
+                                    // Get countryId from city
+                                    string getCountryIdQuery = "SELECT countryId FROM city WHERE cityId = @cityId";
+                                    int countryId;
+                                    using (MySqlCommand cmd = new MySqlCommand(getCountryIdQuery, connection))
+                                    {
+                                        cmd.Parameters.AddWithValue("@cityId", cityId);
+                                        countryId = Convert.ToInt32(cmd.ExecuteScalar());
+                                    }
+
+                                    // Delete the city
+                                    string deleteCityQuery = "DELETE FROM city WHERE cityId = @cityId";
+                                    using (MySqlCommand cmd = new MySqlCommand(deleteCityQuery, connection))
+                                    {
+                                        cmd.Parameters.AddWithValue("@cityId", cityId);
+                                        cmd.ExecuteNonQuery();
+                                    }
+
+                                    // Check if country has other cities
+                                    string checkCountryQuery = "SELECT COUNT(*) FROM city WHERE countryId = @countryId";
+                                    using (MySqlCommand cmd = new MySqlCommand(checkCountryQuery, connection))
+                                    {
+                                        cmd.Parameters.AddWithValue("@countryId", countryId);
+                                        int cityCount = Convert.ToInt32(cmd.ExecuteScalar());
+                                        if (cityCount == 0)
+                                        {
+                                            // Delete the country
+                                            string deleteCountryQuery = "DELETE FROM country WHERE countryId = @countryId";
+                                            using (MySqlCommand cmdDelCountry = new MySqlCommand(deleteCountryQuery, connection))
+                                            {
+                                                cmdDelCountry.Parameters.AddWithValue("@countryId", countryId);
+                                                cmdDelCountry.ExecuteNonQuery();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            transaction.Commit();
+                            return (true, "Customer and related records deleted successfully!");
+                        }
+                        catch (Exception ex)
+                        {
+                            transaction.Rollback();
+                            throw new Exception($"Error in transaction: {ex.Message}");
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
                 return (false, $"Error deleting customer: {ex.Message}");
+            }
+        }
+
+        //Main screen stuff
+        public DataTable GetAllAppointments()
+        {
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = @"
+                SELECT 
+                    a.appointmentId,
+                    a.customerId,
+                    c.customerName,
+                    a.userId,
+                    a.title,
+                    a.description,
+                    a.location,
+                    a.contact,
+                    a.type,
+                    a.url,
+                    a.start,
+                    a.end
+                FROM appointment a
+                JOIN customer c ON a.customerId = c.customerId
+                ORDER BY a.start";
+
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        using (MySqlDataAdapter adapter = new MySqlDataAdapter(command))
+                        {
+                            DataTable appointmentsTable = new DataTable();
+                            adapter.Fill(appointmentsTable);
+                            return appointmentsTable;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving appointments: {ex.Message}");
+                return null;
+            }
+        }
+
+        public DataTable GetAppointmentsByDate(DateTime date)
+        {
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = @"
+                SELECT 
+                    a.appointmentId,
+                    a.customerId,
+                    c.customerName,
+                    a.userId,
+                    a.title,
+                    a.description,
+                    a.location,
+                    a.contact,
+                    a.type,
+                    a.url,
+                    a.start,
+                    a.end
+                FROM appointment a
+                JOIN customer c ON a.customerId = c.customerId
+                WHERE DATE(a.start) = DATE(@date)
+                ORDER BY a.start";
+
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@date", date.Date);
+                        using (MySqlDataAdapter adapter = new MySqlDataAdapter(command))
+                        {
+                            DataTable appointmentsTable = new DataTable();
+                            adapter.Fill(appointmentsTable);
+                            return appointmentsTable;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving appointments: {ex.Message}");
+                return null;
+            }
+        }
+
+        public Dictionary<DateTime, int> GetMonthlyAppointmentCounts(DateTime month)
+        {
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = @"
+                SELECT DATE(start) as date, COUNT(*) as count
+                FROM appointment
+                WHERE YEAR(start) = YEAR(@date) AND MONTH(start) = MONTH(@date)
+                GROUP BY DATE(start)";
+
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@date", month);
+                        Dictionary<DateTime, int> counts = new Dictionary<DateTime, int>();
+
+                        using (MySqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                counts.Add(
+                                    reader.GetDateTime("date"),
+                                    reader.GetInt32("count")
+                                );
+                            }
+                        }
+                        return counts;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving appointment counts: {ex.Message}");
+                return new Dictionary<DateTime, int>();
             }
         }
     }
