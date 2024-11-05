@@ -63,7 +63,6 @@ namespace schedulingApp
             usernameInput.Name = "usernameInput";
             usernameInput.Size = new Size(381, 27);
             usernameInput.TabIndex = 1;
-            usernameInput.TextChanged += this.usernameInput_TextChanged;
             // 
             // pictureBox1
             // 
@@ -170,10 +169,7 @@ namespace schedulingApp
             PerformLayout();
         }
 
-        private void usernameInput_TextChanged(object sender, EventArgs e)
-        {
-            throw new NotImplementedException();
-        }
+
 
         #endregion
 

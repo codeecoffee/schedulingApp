@@ -28,6 +28,27 @@ namespace schedulingApp
                 Text = helper.GetUserLocation()
             };
             this.Controls.Add(locationLabel);
+            try
+            {
+                if (dbHelper.TestConnection())
+                {
+                    Console.WriteLine("Database connection successful!");
+                }
+                else
+                {
+                    MessageBox.Show("Could not connect to database. Please check your connection settings.",
+                        "Connection Error",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Database error: {ex.Message}",
+                    "Connection Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
 
         private void CheckUpcomingAppointments(string username)

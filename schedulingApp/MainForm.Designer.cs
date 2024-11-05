@@ -93,6 +93,7 @@
             bttnCancelAppt.TabIndex = 1;
             bttnCancelAppt.Text = "Cancel Appt";
             bttnCancelAppt.UseVisualStyleBackColor = false;
+            bttnCancelAppt.Click += bttnCancelAppt_Click;
             // 
             // bttnNewAppt
             // 
@@ -107,6 +108,7 @@
             bttnNewAppt.TabIndex = 0;
             bttnNewAppt.Text = "New Appt";
             bttnNewAppt.UseVisualStyleBackColor = false;
+            bttnNewAppt.Click += bttnNewAppt_Click;
             // 
             // groupBox2
             // 
@@ -133,6 +135,7 @@
             bttnEditCustomer.TabIndex = 3;
             bttnEditCustomer.Text = "Edit Customer";
             bttnEditCustomer.UseVisualStyleBackColor = false;
+            bttnEditCustomer.Click += bttnEditCustomer_Click;
             // 
             // bttnNewCustomer
             // 

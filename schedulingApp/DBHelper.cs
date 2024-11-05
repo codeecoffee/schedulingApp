@@ -910,6 +910,32 @@ namespace schedulingApp
             }
         }
 
+        public (bool success, string message) DeleteAppointment(int appointmentId)
+        {
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = "DELETE FROM appointment WHERE appointmentId = @appointmentId";
+
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@appointmentId", appointmentId);
+                        int rowsAffected = command.ExecuteNonQuery();
+
+                        return rowsAffected > 0
+                            ? (true, "Appointment cancelled successfully!")
+                            : (false, "Appointment not found.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Error cancelling appointment: {ex.Message}");
+            }
+        }
+
         public (bool success, string message) AddAppointment(
             int customerId,
             int userId,

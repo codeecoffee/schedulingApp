@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MySql.Data.MySqlClient;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -57,7 +58,7 @@ namespace schedulingApp
 
         private void bttnReports_Click(object sender, EventArgs e)
         {
-            
+
             ContextMenuStrip reportsMenu = new ContextMenuStrip();
             reportsMenu.Items.Add("Appointment Types by Month", null, (s, args) =>
             {
@@ -118,7 +119,7 @@ namespace schedulingApp
                 .ToList();
         }
 
-        
+
         private void ExportReport(string reportContent, string suggestedFileName)
         {
             SaveFileDialog saveDialog = new SaveFileDialog
@@ -242,7 +243,7 @@ namespace schedulingApp
             appointmentList.ItemHeight = 50; // Set height of each item
             appointmentList.DrawItem += AppointmentList_DrawItem;
         }
-        
+
 
         // Custom rendering for appointment items
         private void AppointmentList_DrawItem(object sender, DrawItemEventArgs e)
@@ -561,6 +562,103 @@ namespace schedulingApp
             catch (Exception ex)
             {
                 MessageBox.Show($"Error generating location report: {ex.Message}");
+            }
+        }
+
+        private void bttnNewAppt_Click(object sender, EventArgs e)
+        {
+            NewAppointment newAppointmentForm = new NewAppointment();
+            newAppointmentForm.FormClosed += (s, args) =>
+            {
+                this.Show();
+                // Refresh the calendar and appointment list
+                DisplayCalendar();
+                UpdateAppointmentList();
+            };
+            newAppointmentForm.Show();
+            this.Hide();
+        }
+
+        private void bttnEditCustomer_Click(object sender, EventArgs e)
+        {
+            EditCustomerForm editCustomerForm = new EditCustomerForm();
+            editCustomerForm.FormClosed += (s, args) =>
+            {
+                this.Show();
+                // Refresh the calendar and appointment list in case customer details affect appointments
+                DisplayCalendar();
+                UpdateAppointmentList();
+            };
+            editCustomerForm.Show();
+            this.Hide();
+        }
+
+        private void bttnCancelAppt_Click(object sender, EventArgs e)
+        {
+            // Check if an appointment is selected
+            if (appointmentList.SelectedIndex == -1)
+            {
+                MessageBox.Show("Please select an appointment to cancel.",
+                               "No Selection",
+                               MessageBoxButtons.OK,
+                               MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Get the selected appointment's details
+            DataTable appointments;
+            if (selectedDate.HasValue)
+            {
+                appointments = dbHelper.GetAppointmentsByDate(selectedDate.Value);
+            }
+            else
+            {
+                appointments = dbHelper.GetAllAppointments();
+            }
+
+            if (appointments == null || appointments.Rows.Count == 0 ||
+                appointmentList.SelectedIndex >= appointments.Rows.Count)
+            {
+                MessageBox.Show("Error retrieving appointment details.",
+                               "Error",
+                               MessageBoxButtons.OK,
+                               MessageBoxIcon.Error);
+                return;
+            }
+
+            // Get the appointment ID from the selected row
+            int appointmentId = Convert.ToInt32(appointments.Rows[appointmentList.SelectedIndex]["appointmentId"]);
+
+            // Confirm deletion with user
+            var result = MessageBox.Show(
+                "Are you sure you want to cancel this appointment?",
+                "Confirm Cancellation",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (result == DialogResult.Yes)
+            {
+                // Call the database helper method to delete the appointment
+                var (success, message) = dbHelper.DeleteAppointment(appointmentId);
+
+                if (success)
+                {
+                    MessageBox.Show("Appointment cancelled successfully.",
+                                  "Success",
+                                  MessageBoxButtons.OK,
+                                  MessageBoxIcon.Information);
+
+                    // Refresh the calendar and appointment list
+                    DisplayCalendar();
+                    UpdateAppointmentList();
+                }
+                else
+                {
+                    MessageBox.Show(message,
+                                  "Error",
+                                  MessageBoxButtons.OK,
+                                  MessageBoxIcon.Error);
+                }
             }
         }
 
