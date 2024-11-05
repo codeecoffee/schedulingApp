@@ -13,63 +13,71 @@ using System.Data.SqlClient;
 //Validate fields
 //Exception handling in DB connection
 
-public class Helper 
+public class Helper
 {
-    private const string correctUsername = "test";
-    private const string correctPassword = "test";
-    private string userLanguage;
-    private string connectionString;
-    
+    private CultureInfo userCulture;
+    private TimeZoneInfo userTimeZone;
+    private RegionInfo userRegion;
+
     public Helper()
     {
-        userLanguage = GetLocalMachineLanguage();
-        
-
+        InitializeUserLocation();
     }
 
-    private string GetLocalMachineLanguage()
+    private void InitializeUserLocation()
     {
-        CultureInfo currentCulture = CultureInfo.CurrentUICulture;
-        return currentCulture.Name;
+        userCulture = CultureInfo.CurrentUICulture;
+        userTimeZone = TimeZoneInfo.Local;
+        userRegion = new RegionInfo(userCulture.Name);
     }
 
-    public string TranslateMessage(string message)
+    public string GetUserLocation()
     {
-        if(userLanguage == "pt-BR")
+        return $"Country: {userRegion.DisplayName}\n" +
+               $"Language: {userCulture.DisplayName}\n" +
+               $"Timezone: {userTimeZone.DisplayName}";
+    }
+
+    public string TranslateMessage(string messageKey)
+    {
+        if (userCulture.Name.StartsWith("es")) // Spanish translations
         {
-            switch(message)
+            switch (messageKey)
             {
-                case "The username and password do not match.":
-                    return "O nome de usuário ou senha está incorreto";
-                case "Login successful.":
-                    return "Sucesso";
+                case "LoginFailed":
+                    return "El nombre de usuario y la contraseña no coinciden.";
+                case "LoginSuccessful":
+                    return "Inicio de sesión exitoso.";
+                case "UpcomingAppointment":
+                    return "Tiene una cita próxima en {0} minutos.";
+                case "NoUpcomingAppointments":
+                    return "No tiene citas próximas.";
+                case "ValidationError":
+                    return "Error de validación";
+                case "DatabaseError":
+                    return "Error de base de datos";
                 default:
-                    return message; // Default to original message if not translated 
+                    return messageKey;
             }
         }
-        return message;
-    }
 
-    public bool ValidateCredentials(string username, string password)
-    {
-        if (username == correctUsername && password == correctPassword)
+        // Default English translations
+        switch (messageKey)
         {
-            MessageBox.Show(TranslateMessage("Login successful."));
-            return true;
+            case "LoginFailed":
+                return "The username and password do not match.";
+            case "LoginSuccessful":
+                return "Login successful.";
+            case "UpcomingAppointment":
+                return "You have an upcoming appointment in {0} minutes.";
+            case "NoUpcomingAppointments":
+                return "You have no upcoming appointments.";
+            case "ValidationError":
+                return "Validation Error";
+            case "DatabaseError":
+                return "Database Error";
+            default:
+                return messageKey;
         }
-        else
-        {
-            MessageBox.Show(TranslateMessage("The username and password do not match."));
-            return false;
-        }
-    }
-
-    public string ValidateInput(string input)
-    {
-        //TODO! 
-        //Implement ValidateInput method
-        //This should trim and validate inputs as well as compare if passwords are the same;
-
-        return input;
     }
 }

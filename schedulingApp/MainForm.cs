@@ -18,10 +18,36 @@ namespace schedulingApp
 
         private Dictionary<DateTime, List<string>> appointments; //old
 
+
+        private Button bttnReports;
+
+        private void InitializeReportsButton()
+        {
+            bttnReports = new Button
+            {
+                BackColor = Color.RoyalBlue,
+                Cursor = Cursors.Hand,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Noto Sans", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0),
+                ForeColor = Color.White,
+                Location = new Point(bttnLogout.Left - 160, bttnLogout.Top), // Position it next to Logout
+                Name = "bttnReports",
+                Size = new Size(140, 30),
+                Text = "Reports",
+                UseVisualStyleBackColor = false
+            };
+
+            // Add it to the form
+            this.Controls.Add(bttnReports);
+
+            // Add the click event handler
+            bttnReports.Click += new EventHandler(bttnReports_Click);
+        }
         public MainForm()
         {
 
             InitializeComponent();
+            InitializeReportsButton();
             dbHelper = new DatabaseHelper();
             StartComp();
             LoadAppointments();
@@ -29,6 +55,132 @@ namespace schedulingApp
             ConfigureAppointmentList();
         }
 
+        private void bttnReports_Click(object sender, EventArgs e)
+        {
+            
+            ContextMenuStrip reportsMenu = new ContextMenuStrip();
+            reportsMenu.Items.Add("Appointment Types by Month", null, (s, args) =>
+            {
+                var appointments = GetAppointmentsForReports();
+                if (appointments != null)
+                    GenerateAppointmentTypesByMonth(appointments);
+            });
+
+            reportsMenu.Items.Add("User Schedules", null, (s, args) =>
+            {
+                var appointments = GetAppointmentsForReports();
+                if (appointments != null)
+                    GenerateUserSchedules(appointments);
+            });
+
+            reportsMenu.Items.Add("Location Analysis", null, (s, args) =>
+            {
+                var appointments = GetAppointmentsForReports();
+                if (appointments != null)
+                    GenerateCustomerLocationReport(appointments);
+            });
+
+            reportsMenu.Items.Add(new ToolStripSeparator());
+
+            reportsMenu.Items.Add("Generate All Reports", null, (s, args) =>
+            {
+                GenerateReports();
+            });
+
+            // Show menu
+            reportsMenu.Show(bttnReports, new Point(0, bttnReports.Height));
+        }
+
+        private IEnumerable<dynamic> GetAppointmentsForReports()
+        {
+            var appointments = dbHelper.GetAllAppointments();
+            if (appointments == null || appointments.Rows.Count == 0)
+            {
+                MessageBox.Show("No appointments found to generate reports.",
+                              "No Data",
+                              MessageBoxButtons.OK,
+                              MessageBoxIcon.Information);
+                return null;
+            }
+
+            // !!Check: Convert DataTable to list of appointments 
+            return appointments.AsEnumerable()
+                .Select(row => new
+                {
+                    Type = row.Field<string>("type"),
+                    Start = row.Field<DateTime>("start"),
+                    CustomerName = row.Field<string>("customerName"),
+                    UserId = row.Field<int>("userId"),
+                    Title = row.Field<string>("title"),
+                    Description = row.Field<string>("description"),
+                    Location = row.Field<string>("location")
+                })
+                .ToList();
+        }
+
+        
+        private void ExportReport(string reportContent, string suggestedFileName)
+        {
+            SaveFileDialog saveDialog = new SaveFileDialog
+            {
+                Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
+                FilterIndex = 1,
+                FileName = suggestedFileName
+            };
+
+            if (saveDialog.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    File.WriteAllText(saveDialog.FileName, reportContent);
+                    MessageBox.Show("Report exported successfully!",
+                                  "Export Success",
+                                  MessageBoxButtons.OK,
+                                  MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error exporting report: {ex.Message}",
+                                  "Export Error",
+                                  MessageBoxButtons.OK,
+                                  MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        // ShowReportDialog method include export option
+        private void ShowReportDialog(string title, string report)
+        {
+            Form reportForm = new Form
+            {
+                Text = title,
+                Size = new Size(600, 500),
+                StartPosition = FormStartPosition.CenterParent
+            };
+
+            TextBox reportText = new TextBox
+            {
+                Multiline = true,
+                ScrollBars = ScrollBars.Vertical,
+                Dock = DockStyle.Fill,
+                ReadOnly = true,
+                Font = new Font("Consolas", 10),
+                Text = report
+            };
+
+            Button exportButton = new Button
+            {
+                Text = "Export",
+                Dock = DockStyle.Bottom,
+                Height = 30
+            };
+
+            exportButton.Click += (s, e) => ExportReport(report, $"{title.Replace(" ", "_")}.txt");
+
+            reportForm.Controls.Add(reportText);
+            reportForm.Controls.Add(exportButton);
+            reportForm.ShowDialog();
+        }
 
         protected override void OnLoad(EventArgs e)
         {
@@ -90,7 +242,7 @@ namespace schedulingApp
             appointmentList.ItemHeight = 50; // Set height of each item
             appointmentList.DrawItem += AppointmentList_DrawItem;
         }
-        // Load sample appointments (you can load from a database here)
+        
 
         // Custom rendering for appointment items
         private void AppointmentList_DrawItem(object sender, DrawItemEventArgs e)
@@ -246,5 +398,171 @@ namespace schedulingApp
             newCustomerForm.Show();
             this.Hide();
         }
+
+        private void GenerateReports()
+        {
+            var appointments = dbHelper.GetAllAppointments();
+            if (appointments == null || appointments.Rows.Count == 0)
+            {
+                MessageBox.Show("No appointments found to generate reports.");
+                return;
+            }
+
+            // Convert DataTable to list of appointments for easier manipulation
+            var appointmentList = appointments.AsEnumerable()
+                .Select(row => new
+                {
+                    Type = row.Field<string>("type"),
+                    Start = row.Field<DateTime>("start"),
+                    CustomerName = row.Field<string>("customerName"),
+                    UserId = row.Field<int>("userId"),
+                    Title = row.Field<string>("title"),
+                    Description = row.Field<string>("description"),
+                    Location = row.Field<string>("location")
+                }).ToList();
+
+            // Generate reports
+            GenerateAppointmentTypesByMonth(appointmentList);
+            GenerateUserSchedules(appointmentList);
+            GenerateCustomerLocationReport(appointmentList); // Additional report
+        }
+
+        private void GenerateAppointmentTypesByMonth(IEnumerable<dynamic> appointments)
+        {
+            try
+            {
+                // Group appointments by month and type using lambda
+                var report = appointments
+                    .GroupBy(a => new { Month = a.Start.ToString("MMMM yyyy"), Type = a.Type })
+                    .Select(g => new
+                    {
+                        Month = g.Key.Month,
+                        Type = g.Key.Type,
+                        Count = g.Count()
+                    })
+                    .OrderBy(x => DateTime.ParseExact(x.Month, "MMMM yyyy", null))
+                    .ThenBy(x => x.Type)
+                    .ToList();
+
+                // Create report string
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine("Appointment Types by Month Report\n");
+
+                string currentMonth = "";
+                foreach (var item in report)
+                {
+                    if (currentMonth != item.Month)
+                    {
+                        currentMonth = item.Month;
+                        sb.AppendLine($"\n{currentMonth}:");
+                    }
+                    sb.AppendLine($"  {item.Type}: {item.Count} appointments");
+                }
+
+                // Show report
+                ShowReportDialog("Appointment Types by Month", sb.ToString());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error generating appointment types report: {ex.Message}");
+            }
+        }
+
+        private void GenerateUserSchedules(IEnumerable<dynamic> appointments)
+        {
+            try
+            {
+                // Group appointments by user and order by date using lambda
+                var userSchedules = appointments
+                    .GroupBy(a => a.UserId)
+                    .Select(g => new
+                    {
+                        UserId = g.Key,
+                        Appointments = g.OrderBy(a => a.Start)
+                            .Select(a => new
+                            {
+                                Date = a.Start.ToString("MM/dd/yyyy"),
+                                Time = a.Start.ToString("HH:mm"),
+                                Customer = a.CustomerName,
+                                Title = a.Title,
+                                Type = a.Type
+                            })
+                            .ToList()
+                    })
+                    .ToList();
+
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine("User Schedules Report\n");
+
+                foreach (var userSchedule in userSchedules)
+                {
+                    sb.AppendLine($"User ID: {userSchedule.UserId}");
+                    sb.AppendLine("----------------------------------------");
+
+                    string currentDate = "";
+                    foreach (var appt in userSchedule.Appointments)
+                    {
+                        if (currentDate != appt.Date)
+                        {
+                            currentDate = appt.Date;
+                            sb.AppendLine($"\n{currentDate}:");
+                        }
+                        sb.AppendLine($"  {appt.Time} - {appt.Customer} ({appt.Type})");
+                    }
+                    sb.AppendLine("\n");
+                }
+
+                ShowReportDialog("User Schedules", sb.ToString());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error generating user schedules report: {ex.Message}");
+            }
+        }
+
+        // Additional report: Customer appointments by location with statistics
+        private void GenerateCustomerLocationReport(IEnumerable<dynamic> appointments)
+        {
+            try
+            {
+                // Group appointments by location using lambda
+                var locationStats = appointments
+                    .GroupBy(a => a.Location)
+                    .Select(g => new
+                    {
+                        Location = string.IsNullOrEmpty(g.Key) ? "No Location" : g.Key,
+                        TotalAppointments = g.Count(),
+                        UniqueCustomers = g.Select(a => a.CustomerName).Distinct().Count(),
+                        AverageAppointmentsPerMonth = g.GroupBy(a => new { a.Start.Year, a.Start.Month })
+                            .Average(m => m.Count()),
+                        MostCommonType = g.GroupBy(a => a.Type)
+                            .OrderByDescending(t => t.Count())
+                            .First().Key
+                    })
+                    .OrderByDescending(l => l.TotalAppointments)
+                    .ToList();
+
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine("Location Analysis Report\n");
+                sb.AppendLine("Location Statistics Summary");
+                sb.AppendLine("----------------------------------------");
+
+                foreach (var location in locationStats)
+                {
+                    sb.AppendLine($"\nLocation: {location.Location}");
+                    sb.AppendLine($"Total Appointments: {location.TotalAppointments}");
+                    sb.AppendLine($"Unique Customers: {location.UniqueCustomers}");
+                    sb.AppendLine($"Average Appointments/Month: {location.AverageAppointmentsPerMonth:F1}");
+                    sb.AppendLine($"Most Common Appointment Type: {location.MostCommonType}");
+                }
+
+                ShowReportDialog("Location Analysis Report", sb.ToString());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error generating location report: {ex.Message}");
+            }
+        }
+
     }
 }

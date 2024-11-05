@@ -12,9 +12,52 @@ namespace schedulingApp
 {
     public partial class LoginForm : Form
     {
+        private readonly Helper helper;
+        private readonly DatabaseHelper dbHelper;
+
         public LoginForm()
         {
             InitializeComponent();
+            helper = new Helper();
+            dbHelper = new DatabaseHelper();
+
+            Label locationLabel = new Label
+            {
+                AutoSize = true,
+                Location = new Point(12, this.Height - 100),
+                Text = helper.GetUserLocation()
+            };
+            this.Controls.Add(locationLabel);
+        }
+
+        private void CheckUpcomingAppointments(string username)
+        {
+            DataTable upcomingAppointments = dbHelper.GetUpcomingAppointments(username, 15);
+
+            if (upcomingAppointments != null && upcomingAppointments.Rows.Count > 0)
+            {
+                foreach (DataRow appointment in upcomingAppointments.Rows)
+                {
+                    DateTime appointmentTime = TimeZoneInfo.ConvertTimeFromUtc(
+                        ((DateTime)appointment["start"]).ToUniversalTime(),
+                        TimeZoneInfo.Local);
+
+                    int minutesUntil = (int)(appointmentTime - DateTime.Now).TotalMinutes;
+
+                    string message = string.Format(
+                        helper.TranslateMessage("UpcomingAppointment"),
+                        minutesUntil) + $"\n\n" +
+                        $"Customer: {appointment["customerName"]}\n" +
+                        $"Title: {appointment["title"]}\n" +
+                        $"Time: {appointmentTime:g}";
+
+                    MessageBox.Show(
+                        message,
+                        helper.TranslateMessage("UpcomingAppointment"),
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+            }
         }
 
         private void bttnLogin_Click(object sender, EventArgs e)
@@ -26,32 +69,41 @@ namespace schedulingApp
             var (isValid, message) = ValidationHelper.ValidateLoginInput(username, password);
             if (!isValid)
             {
-                MessageBox.Show(message, "Login Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(
+                    helper.TranslateMessage(message),
+                    helper.TranslateMessage("ValidationError"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
                 return;
             }
 
-            DatabaseHelper dbHelper = new DatabaseHelper();
-
             if (dbHelper.ValidateUser(username, password))
             {
-                // Log successful login
                 dbHelper.LogLoginAttempt(username, true);
 
-                // Get user details if needed
-                DataRow userDetails = dbHelper.GetUserDetails(username);
+                // Check for upcoming appointments
+                CheckUpcomingAppointments(username);
 
-                // Open the MainForm          
+                // Show success message
+                MessageBox.Show(
+                    helper.TranslateMessage("LoginSuccessful"),
+                    "",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
+                // Open main form
                 MainForm mainForm = new MainForm();
                 mainForm.Show();
-
                 this.Hide();
             }
             else
             {
-                // Log failed login attempt
                 dbHelper.LogLoginAttempt(username, false);
-                MessageBox.Show("Invalid username or password.", "Login Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    helper.TranslateMessage("LoginFailed"),
+                    helper.TranslateMessage("ValidationError"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
         private void bttnRegister_Click(object sender, EventArgs e)

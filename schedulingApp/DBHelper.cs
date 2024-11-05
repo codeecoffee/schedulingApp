@@ -652,6 +652,54 @@ namespace schedulingApp
         }
 
         //Main screen stuff
+
+        public DataTable GetUpcomingAppointments(string username, int minutesThreshold)
+        {
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = @"
+                SELECT 
+                    a.appointmentId,
+                    a.customerId,
+                    c.customerName,
+                    a.userId,
+                    a.title,
+                    a.description,
+                    a.location,
+                    a.contact,
+                    a.type,
+                    a.url,
+                    a.start,
+                    a.end
+                FROM appointment a
+                JOIN customer c ON a.customerId = c.customerId
+                JOIN user u ON a.userId = u.userId
+                WHERE u.userName = @username
+                AND a.start BETWEEN UTC_TIMESTAMP() AND UTC_TIMESTAMP() + INTERVAL @minutes MINUTE
+                ORDER BY a.start";
+
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@username", username);
+                        command.Parameters.AddWithValue("@minutes", minutesThreshold);
+                        using (MySqlDataAdapter adapter = new MySqlDataAdapter(command))
+                        {
+                            DataTable appointmentsTable = new DataTable();
+                            adapter.Fill(appointmentsTable);
+                            return appointmentsTable;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving upcoming appointments: {ex.Message}");
+                return null;
+            }
+        }
         public DataTable GetAllAppointments()
         {
             try
@@ -776,6 +824,153 @@ namespace schedulingApp
             {
                 Console.WriteLine($"Error retrieving appointment counts: {ex.Message}");
                 return new Dictionary<DateTime, int>();
+            }
+        }
+
+        public DataTable GetCustomerAppointments(int customerId)
+        {
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = @"
+                SELECT 
+                    a.appointmentId,
+                    a.customerId,
+                    c.customerName,
+                    a.userId,
+                    a.title,
+                    a.description,
+                    a.location,
+                    a.contact,
+                    a.type,
+                    a.url,
+                    a.start,
+                    a.end
+                FROM appointment a
+                JOIN customer c ON a.customerId = c.customerId
+                WHERE a.customerId = @customerId
+                ORDER BY a.start";
+
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@customerId", customerId);
+                        using (MySqlDataAdapter adapter = new MySqlDataAdapter(command))
+                        {
+                            DataTable appointmentsTable = new DataTable();
+                            adapter.Fill(appointmentsTable);
+                            return appointmentsTable;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving appointments: {ex.Message}");
+                return null;
+            }
+        }
+
+        public bool HasOverlappingAppointments(int customerId, DateTime startTime, DateTime endTime, int? excludeAppointmentId = null)
+        {
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = @"
+                SELECT COUNT(*)
+                FROM appointment
+                WHERE customerId = @customerId
+                AND ((start BETWEEN @start AND @end)
+                     OR (end BETWEEN @start AND @end)
+                     OR (start <= @start AND end >= @end))";
+
+                    if (excludeAppointmentId.HasValue)
+                        query += " AND appointmentId != @excludeAppointmentId";
+
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@customerId", customerId);
+                        command.Parameters.AddWithValue("@start", startTime);
+                        command.Parameters.AddWithValue("@end", endTime);
+                        if (excludeAppointmentId.HasValue)
+                            command.Parameters.AddWithValue("@excludeAppointmentId", excludeAppointmentId.Value);
+
+                        int count = Convert.ToInt32(command.ExecuteScalar());
+                        return count > 0;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error checking overlapping appointments: {ex.Message}");
+                return true; // Return true on error to prevent scheduling
+            }
+        }
+
+        public (bool success, string message) AddAppointment(
+            int customerId,
+            int userId,
+            string title,
+            string description,
+            string location,
+            string contact,
+            string type,
+            string url,
+            DateTime startLocal,
+            DateTime endLocal)
+        {
+            try
+            {
+                // Convert to UTC for storage
+                DateTime startUtc = TimeZoneInfo.ConvertTimeToUtc(startLocal);
+                DateTime endUtc = TimeZoneInfo.ConvertTimeToUtc(endLocal);
+
+                // Check for overlapping appointments
+                if (HasOverlappingAppointments(customerId, startUtc, endUtc))
+                {
+                    return (false, "This customer already has an appointment scheduled during this time.");
+                }
+
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = @"
+                INSERT INTO appointment 
+                (customerId, userId, title, description, location, contact, type, url,
+                 start, end, createDate, createdBy, lastUpdate, lastUpdateBy)
+                VALUES 
+                (@customerId, @userId, @title, @description, @location, @contact, @type,
+                 @url, @start, @end, @createDate, @createdBy, @lastUpdate, @lastUpdateBy)";
+
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        DateTime now = DateTime.UtcNow;
+                        command.Parameters.AddWithValue("@customerId", customerId);
+                        command.Parameters.AddWithValue("@userId", userId);
+                        command.Parameters.AddWithValue("@title", title);
+                        command.Parameters.AddWithValue("@description", description);
+                        command.Parameters.AddWithValue("@location", location);
+                        command.Parameters.AddWithValue("@contact", contact);
+                        command.Parameters.AddWithValue("@type", type);
+                        command.Parameters.AddWithValue("@url", url);
+                        command.Parameters.AddWithValue("@start", startUtc);
+                        command.Parameters.AddWithValue("@end", endUtc);
+                        command.Parameters.AddWithValue("@createDate", now);
+                        command.Parameters.AddWithValue("@createdBy", currentUser);
+                        command.Parameters.AddWithValue("@lastUpdate", now);
+                        command.Parameters.AddWithValue("@lastUpdateBy", currentUser);
+
+                        command.ExecuteNonQuery();
+                        return (true, "Appointment added successfully!");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Error adding appointment: {ex.Message}");
             }
         }
     }
