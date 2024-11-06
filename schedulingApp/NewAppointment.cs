@@ -195,6 +195,12 @@ namespace schedulingApp
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
                     LoadAppointments(selectedCustomerId);
                     ClearForm();
+
+                    //Should keep? 
+                    // Return to main form
+                    //MainForm mainForm = new MainForm();
+                    //mainForm.Show();
+                    //this.Close();
                 }
                 else
                 {

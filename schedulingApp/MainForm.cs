@@ -238,10 +238,53 @@ namespace schedulingApp
         }
         private void ConfigureAppointmentList()
         {
-            // Enable custom drawing for the appointment list
+            // Keep your existing configuration
             appointmentList.DrawMode = DrawMode.OwnerDrawFixed;
-            appointmentList.ItemHeight = 50; // Set height of each item
+            appointmentList.ItemHeight = 50;
             appointmentList.DrawItem += AppointmentList_DrawItem;
+
+            // Add double-click handler
+            appointmentList.DoubleClick += AppointmentList_DoubleClick;
+        }
+
+        private void AppointmentList_DoubleClick(object sender, EventArgs e)
+        {
+            if (appointmentList.SelectedIndex == -1) return;
+
+            DataTable appointments;
+            if (selectedDate.HasValue)
+            {
+                appointments = dbHelper.GetAppointmentsByDate(selectedDate.Value);
+            }
+            else
+            {
+                appointments = dbHelper.GetAllAppointments();
+            }
+
+            if (appointments == null || appointments.Rows.Count == 0 ||
+                appointmentList.SelectedIndex >= appointments.Rows.Count)
+            {
+                MessageBox.Show("Error retrieving appointment details.",
+                               "Error",
+                               MessageBoxButtons.OK,
+                               MessageBoxIcon.Error);
+                return;
+            }
+
+            // Get the appointment ID from the selected row
+            int appointmentId = Convert.ToInt32(appointments.Rows[appointmentList.SelectedIndex]["appointmentId"]);
+
+            // Open the edit form
+            EditAppointments editForm = new EditAppointments(appointmentId);
+            editForm.FormClosed += (s, args) =>
+            {
+                this.Show();
+                // Refresh the calendar and appointment list
+                DisplayCalendar();
+                UpdateAppointmentList();
+            };
+            editForm.Show();
+            this.Hide();
         }
 
 
@@ -379,7 +422,6 @@ namespace schedulingApp
             currentMonth = currentMonth.AddMonths(-1);
             DisplayCalendar();
         }
-
         private void bttnNextMonth_Click(object sender, EventArgs e)
         {
             currentMonth = currentMonth.AddMonths(1);
@@ -393,12 +435,7 @@ namespace schedulingApp
             }
         }
 
-        private void bttnNewCustomer_Click(object sender, EventArgs e)
-        {
-            NewCustomerForm newCustomerForm = new NewCustomerForm();
-            newCustomerForm.Show();
-            this.Hide();
-        }
+
 
         private void GenerateReports()
         {
@@ -564,18 +601,11 @@ namespace schedulingApp
                 MessageBox.Show($"Error generating location report: {ex.Message}");
             }
         }
-
-        private void bttnNewAppt_Click(object sender, EventArgs e)
+       
+        private void bttnNewCustomer_Click(object sender, EventArgs e)
         {
-            NewAppointment newAppointmentForm = new NewAppointment();
-            newAppointmentForm.FormClosed += (s, args) =>
-            {
-                this.Show();
-                // Refresh the calendar and appointment list
-                DisplayCalendar();
-                UpdateAppointmentList();
-            };
-            newAppointmentForm.Show();
+            NewCustomerForm newCustomerForm = new NewCustomerForm();
+            newCustomerForm.Show();
             this.Hide();
         }
 
@@ -590,6 +620,20 @@ namespace schedulingApp
                 UpdateAppointmentList();
             };
             editCustomerForm.Show();
+            this.Hide();
+        }
+
+        private void bttnNewAppt_Click(object sender, EventArgs e)
+        {
+            NewAppointment newAppointmentForm = new NewAppointment();
+            newAppointmentForm.FormClosed += (s, args) =>
+            {
+                this.Show();
+                // Refresh the calendar and appointment list
+                DisplayCalendar();
+                UpdateAppointmentList();
+            };
+            newAppointmentForm.Show();
             this.Hide();
         }
 

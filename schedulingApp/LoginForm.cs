@@ -136,7 +136,17 @@ namespace schedulingApp
 
         private void bttnExit_Click(object sender, EventArgs e)
         {
-            this.Close();
+            DialogResult result = MessageBox.Show(
+        "Are you sure you want to exit the application?",
+        "Confirm Exit",
+        MessageBoxButtons.YesNo,
+        MessageBoxIcon.Question);
+
+            if (result == DialogResult.Yes)
+            {
+                
+                Application.Exit();
+            }
         }
         private void LogLogin(string username)
         {

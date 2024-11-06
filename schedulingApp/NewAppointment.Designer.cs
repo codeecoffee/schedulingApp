@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             panel1 = new Panel();
+            labelCurrentAppointments = new Label();
             CustomerComboBox = new ComboBox();
             labelCustomer = new Label();
             EndDatePicker = new DateTimePicker();
@@ -51,7 +52,6 @@
             TitleInput = new TextBox();
             labelStartDate = new Label();
             labelDescription = new Label();
-            labelCurrentAppointments = new Label();
             panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)AppointmentsDataGridView).BeginInit();
             SuspendLayout();
@@ -88,6 +88,16 @@
             panel1.Name = "panel1";
             panel1.Size = new Size(1958, 1144);
             panel1.TabIndex = 1;
+            // 
+            // labelCurrentAppointments
+            // 
+            labelCurrentAppointments.AutoSize = true;
+            labelCurrentAppointments.Location = new Point(964, 208);
+            labelCurrentAppointments.Margin = new Padding(4, 0, 4, 0);
+            labelCurrentAppointments.Name = "labelCurrentAppointments";
+            labelCurrentAppointments.Size = new Size(193, 24);
+            labelCurrentAppointments.TabIndex = 44;
+            labelCurrentAppointments.Text = "Current Appointments";
             // 
             // CustomerComboBox
             // 
@@ -302,22 +312,14 @@
             labelDescription.TabIndex = 25;
             labelDescription.Text = "Description";
             // 
-            // labelCurrentAppointments
-            // 
-            labelCurrentAppointments.AutoSize = true;
-            labelCurrentAppointments.Location = new Point(964, 208);
-            labelCurrentAppointments.Margin = new Padding(4, 0, 4, 0);
-            labelCurrentAppointments.Name = "labelCurrentAppointments";
-            labelCurrentAppointments.Size = new Size(193, 24);
-            labelCurrentAppointments.TabIndex = 44;
-            labelCurrentAppointments.Text = "Current Appointments";
-            // 
             // NewAppointment
             // 
             AutoScaleDimensions = new SizeF(11F, 24F);
             AutoScaleMode = AutoScaleMode.Font;
+            AutoSizeMode = AutoSizeMode.GrowAndShrink;
             ClientSize = new Size(1958, 1144);
             Controls.Add(panel1);
+            FormBorderStyle = FormBorderStyle.None;
             Name = "NewAppointment";
             Text = "NewAppointment";
             panel1.ResumeLayout(false);

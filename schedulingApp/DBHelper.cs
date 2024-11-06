@@ -538,7 +538,7 @@ namespace schedulingApp
                     {
                         try
                         {
-                            // First, check if customer has any appointments
+                            //check if customer has any appointments
                             string checkAppointmentsQuery = "SELECT COUNT(*) FROM appointment WHERE customerId = @customerId";
                             using (MySqlCommand command = new MySqlCommand(checkAppointmentsQuery, connection))
                             {
@@ -999,5 +999,75 @@ namespace schedulingApp
                 return (false, $"Error adding appointment: {ex.Message}");
             }
         }
+
+        public (bool success, string message) UpdateAppointment(
+            int appointmentId,
+            int customerId,
+            int userId,
+            string title,
+            string description,
+            string location,
+            string contact,
+            string type,
+            string url,
+            DateTime startLocal,
+            DateTime endLocal)
+        {
+            try
+            {
+                // Convert to UTC for storage
+                DateTime startUtc = TimeZoneInfo.ConvertTimeToUtc(startLocal);
+                DateTime endUtc = TimeZoneInfo.ConvertTimeToUtc(endLocal);
+
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = @"
+                UPDATE appointment 
+                SET customerId = @customerId,
+                    userId = @userId,
+                    title = @title,
+                    description = @description,
+                    location = @location,
+                    contact = @contact,
+                    type = @type,
+                    url = @url,
+                    start = @start,
+                    end = @end,
+                    lastUpdate = @lastUpdate,
+                    lastUpdateBy = @lastUpdateBy
+                WHERE appointmentId = @appointmentId";
+
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        DateTime now = DateTime.UtcNow;
+                        command.Parameters.AddWithValue("@appointmentId", appointmentId);
+                        command.Parameters.AddWithValue("@customerId", customerId);
+                        command.Parameters.AddWithValue("@userId", userId);
+                        command.Parameters.AddWithValue("@title", title);
+                        command.Parameters.AddWithValue("@description", description);
+                        command.Parameters.AddWithValue("@location", location);
+                        command.Parameters.AddWithValue("@contact", contact);
+                        command.Parameters.AddWithValue("@type", type);
+                        command.Parameters.AddWithValue("@url", url);
+                        command.Parameters.AddWithValue("@start", startUtc);
+                        command.Parameters.AddWithValue("@end", endUtc);
+                        command.Parameters.AddWithValue("@lastUpdate", now);
+                        command.Parameters.AddWithValue("@lastUpdateBy", currentUser);
+
+                        int rowsAffected = command.ExecuteNonQuery();
+                        return rowsAffected > 0
+                            ? (true, "Appointment updated successfully!")
+                            : (false, "No appointment was updated.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Error updating appointment: {ex.Message}");
+            }
+        }
+
+
     }
 }
