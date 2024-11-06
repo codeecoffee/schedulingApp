@@ -8,10 +8,23 @@ namespace schedulingApp
         [STAThread]
         static void Main()
         {
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
-            ApplicationConfiguration.Initialize();
-            Application.Run(new LoginForm());
+            try
+            {
+                var dbSetup = new DatabaseSetup();
+                dbSetup.InitializeDatabase();
+
+
+                ApplicationConfiguration.Initialize();
+                Application.Run(new LoginForm());
+
+            }
+            catch (Exception ex) 
+            {
+                MessageBox.Show($"Application initialization error: {ex.Message}",
+                                 "Error",
+                                 MessageBoxButtons.OK,
+                                 MessageBoxIcon.Error);
+            }
         }
     }
 }
