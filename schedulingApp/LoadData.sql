@@ -1,10 +1,4 @@
-
-################### START OF SCRIPT #################################
- 
--- Replace <schema name> with your schema name on the USE line Below:
- 
-USE <schema name>;
- 
+USE client_schedule; 
 --
 -- populate table `country`
 --
@@ -47,11 +41,3 @@ INSERT INTO `appointment` VALUES
 (1,1,1,'not needed','not needed','not needed','not needed','Presentation','not needed','2019-01-01 00:00:00','2019-01-01 00:00:00','2019-01-01 00:00:00','test','2019-01-01 00:00:00','test'),
 (2,2,1,'not needed','not needed','not needed','not needed','Scrum','not needed','2019-01-01 00:00:00','2019-01-01 00:00:00','2019-01-01 00:00:00','test','2019-01-01 00:00:00','test');
  
- 
-######################### END OF SCRIPT #############################
- 
-
-
-
-Article Link: 
-https://srm--c.na127.visual.force.com/apex/CourseArticle?id=kA03x000000snjkCAA

@@ -9,12 +9,7 @@ namespace schedulingApp
         private readonly string connectionString;
         public DatabaseSetup()
         {
-            connectionString = "Server=127.0.0.1;" +
-                              "Port=3306;" +
-                              "Database=client_schedule;" +
-                              "Uid=sqlUser;" +
-                              "Pwd=Passw0rd!;" +
-                              "Convert Zero Datetime=True;";
+            connectionString = "server=localhost;user=sqlUser;database=client_schedule;port=3306;password=Passw0rd!";
         }
 
         public bool InitializeDatabase()

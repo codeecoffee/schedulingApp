@@ -9,7 +9,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MySql.Data" Version="9.0.0" />
+    <None Remove="LoadData.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="LoadData.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MySql.Data" Version="9.1.0" />
+    <PackageReference Include="MySql_connector_for_2022" Version="1.0.2" />
   </ItemGroup>
 
   <ItemGroup>
