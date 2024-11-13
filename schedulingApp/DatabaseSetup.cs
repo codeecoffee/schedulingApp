@@ -7,15 +7,14 @@ namespace schedulingApp
     public class DatabaseSetup
     {
         private readonly string connectionString;
-
         public DatabaseSetup()
         {
-            // Hardcoded credentials for AWS RDS
-            connectionString = "Server=schedulingapp.cnw800uucbut.us-east-1.rds.amazonaws.com;" +
-                             "Database=schedulingApp;" +
-                             "Uid=root;" +
-                             "Pwd=TestDB2024!;" +
-                             "Convert Zero Datetime=True;";
+            connectionString = "Server=127.0.0.1;" +
+                              "Port=3306;" +
+                              "Database=client_schedule;" +
+                              "Uid=sqlUser;" +
+                              "Pwd=Passw0rd!;" +
+                              "Convert Zero Datetime=True;";
         }
 
         public bool InitializeDatabase()
@@ -29,7 +28,7 @@ namespace schedulingApp
                     {
                         command.Connection = connection;
 
-                        // Read and execute the setup script
+                        // Setup
                         string sqlScript = File.ReadAllText("database-setup.sql");
                         string[] commands = sqlScript.Split(new[] { ";" },
                             StringSplitOptions.RemoveEmptyEntries);
