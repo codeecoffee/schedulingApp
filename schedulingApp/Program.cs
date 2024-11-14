@@ -40,25 +40,25 @@ namespace schedulingApp
         static void Main(string[] args)
         {
             // Check if this is first run by looking for a marker file
-            string markerFile = "database_initialized.txt";
+            //string markerFile = "database_initialized.txt";
 
-            if (!File.Exists(markerFile))
-            {
-                Console.WriteLine("First run detected. Initializing database...");
+            //if (!File.Exists(markerFile))
+            //{
+            //    Console.WriteLine("First run detected. Initializing database...");
 
-                var dbSetup = new DatabaseSetup();
-                if (dbSetup.InitializeDatabase())
-                {
-                    Console.WriteLine("Database initialized successfully!");
-                    // Create marker file to indicate database has been initialized
-                    File.WriteAllText(markerFile, DateTime.Now.ToString());
-                }
-                else
-                {
-                    Console.WriteLine("Failed to initialize database!");
-                    return;
-                }
-            }
+            //    var dbSetup = new DatabaseSetup();
+            //    if (dbSetup.InitializeDatabase())
+            //    {
+            //        Console.WriteLine("Database initialized successfully!");
+            //        // Create marker file to indicate database has been initialized
+            //        File.WriteAllText(markerFile, DateTime.Now.ToString());
+            //    }
+            //    else
+            //    {
+            //        Console.WriteLine("Failed to initialize database!");
+            //        return;
+            //    }
+            //}
 
             // Continue with regular application startup
             StartApplication();

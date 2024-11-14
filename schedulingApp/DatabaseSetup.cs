@@ -1,6 +1,6 @@
 ﻿using MySql.Data.MySqlClient;
 using System;
-using System.IO;
+//using System.IO;
 
 namespace schedulingApp
 {
@@ -11,7 +11,7 @@ namespace schedulingApp
 
         public DatabaseSetup()
         {
-            rootCoonectionString = "server=127.0.0.1;" + "port=3306;" + "Uid=sqlUser" + "Pwd=Passw0rd!";
+            rootCoonectionString = "server=127.0.0.1;" + "port=3306;" + "Uid=sqlUser;" + "Pwd=Passw0rd!";
             connectionString = rootCoonectionString +"Database=client_schedule";
            // connectionString = "server=localhost;user=sqlUser;database=client_schedule;port=3306;password=Passw0rd!"
         }
