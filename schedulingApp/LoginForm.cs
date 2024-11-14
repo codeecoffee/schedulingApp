@@ -21,6 +21,9 @@ namespace schedulingApp
             helper = new Helper();
             dbHelper = new DatabaseHelper();
 
+
+               
+
             Label locationLabel = new Label
             {
                 AutoSize = true,
@@ -30,6 +33,7 @@ namespace schedulingApp
             this.Controls.Add(locationLabel);
             try
             {
+               
                 if (dbHelper.TestConnection())
                 {
                     Console.WriteLine("Database connection successful!");
