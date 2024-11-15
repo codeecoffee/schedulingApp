@@ -1,26 +1,17 @@
-﻿using MySql.Data.MySqlClient;
+﻿using MySqlConnector;
 using System;
-//using System.IO;
+using System.IO;
 
 namespace schedulingApp
 {
     public class DatabaseSetup
     {
-        private readonly string connectionString;
-        private readonly string rootCoonectionString;
 
-        public DatabaseSetup()
-        {
-            rootCoonectionString = "server=127.0.0.1;" + "port=3306;" + "Uid=sqlUser;" + "Pwd=Passw0rd!";
-            connectionString = rootCoonectionString +"Database=client_schedule";
-           // connectionString = "server=localhost;user=sqlUser;database=client_schedule;port=3306;password=Passw0rd!"
-        }
-
-        public bool InitializeDatabase()
+        public bool InitializeDatabase(string connectionString)
         {
             try
             {
-                if (!ExecuteScriptFile("database-setup.sql",rootCoonectionString)) { return false; }
+                if (!ExecuteScriptFile("database-setup.sql",connectionString)) { return false; }
                 if (!ExecuteScriptFile("LoadData.sql",connectionString)) { return false; }
                 return true;
             }

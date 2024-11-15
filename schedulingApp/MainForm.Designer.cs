@@ -238,7 +238,7 @@
             Controls.Add(groupBox1);
             Controls.Add(appointmentList);
             Controls.Add(label1);
-            FormBorderStyle = FormBorderStyle.None;
+            FormBorderStyle = FormBorderStyle.FixedSingle;
             Name = "MainForm";
             Text = "MainForm";
             groupBox1.ResumeLayout(false);

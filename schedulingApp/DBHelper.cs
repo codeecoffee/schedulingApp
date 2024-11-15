@@ -1,4 +1,4 @@
-﻿using MySql.Data.MySqlClient;
+﻿using MySqlConnector;
 using System;
 using System.Data;
 using System.Configuration;
@@ -16,6 +16,7 @@ namespace schedulingApp
             connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
             this.currentUser = currentUser;
         }
+        //Opens the connection and Setup the DB if no costumer is found on the DB. 
         public bool TestConnection()
         {
             try
@@ -23,12 +24,28 @@ namespace schedulingApp
                 using (MySqlConnection connection = new MySqlConnection(connectionString))
                 {
                     connection.Open();
+                    SetupDatabase();
                     return true;
                 }
             }
             catch
             {
                 return false;
+            }
+        }
+        //Calls the does the comparison to the DB Customers and calls the initialization
+        public void SetupDatabase()
+        {
+            var customers = GetAllCustomers();
+            if (customers != null && customers.Rows.Count > 0)
+            {
+                Console.WriteLine($"Found {customers.Rows.Count} customers in database.");
+                
+            }
+            else 
+            {
+                var dbSetup= new DatabaseSetup();
+                dbSetup.InitializeDatabase(connectionString);
             }
         }
 
