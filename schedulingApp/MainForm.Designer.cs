@@ -220,6 +220,7 @@
             bttnLogout.TabIndex = 5;
             bttnLogout.Text = "Log Out";
             bttnLogout.UseVisualStyleBackColor = false;
+            bttnLogout.Click += bttnLogout_Click;
             // 
             // MainForm
             // 

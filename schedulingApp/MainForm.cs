@@ -192,13 +192,6 @@ namespace schedulingApp
 
         private void LoadAppointments()
         {
-            //appointments = new Dictionary<DateTime, List<string>>
-            //{
-            //    { new DateTime(DateTime.Now.Year, DateTime.Now.Month, 5),
-            //        new List<string> { "John Doe at 10:00 AM", "Jane Smith at 2:00 PM" } },
-            //    { new DateTime(DateTime.Now.Year, DateTime.Now.Month, 18),
-            //        new List<string> { "Client Meeting at 11:00 AM" } }
-            //};
             UpdateAppointmentList();
         }
 
@@ -602,7 +595,7 @@ namespace schedulingApp
                 MessageBox.Show($"Error generating location report: {ex.Message}");
             }
         }
-       
+
         private void bttnNewCustomer_Click(object sender, EventArgs e)
         {
             NewCustomerForm newCustomerForm = new NewCustomerForm();
@@ -707,5 +700,9 @@ namespace schedulingApp
             }
         }
 
+        private void bttnLogout_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
