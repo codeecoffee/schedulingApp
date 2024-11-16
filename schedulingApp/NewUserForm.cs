@@ -19,8 +19,10 @@ namespace schedulingApp
             string password = PasswordInput.Text;
             string confirmPassword = PasswordConfirmation.Text;
 
+            //validation Part
+            
+            //1. check for empty fields/ exceeding 50 chars
             var (isValid, message) = ValidationHelper.ValidateLoginInput(username, password);
-
             if (!isValid)
             {
                 MessageBox.Show(message, "Registration Error",
@@ -28,17 +30,23 @@ namespace schedulingApp
                 return;
             }
 
-            // Check if passwords match
-            if (password != confirmPassword)
+            ////2. check if pass and confirmation match
+            //if (password != confirmPassword)
+            //{
+            //    MessageBox.Show("Passwords do not match.", "Registration Error",
+            //        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            //    return;
+            //}
+
+            //2. Check if passwords match  
+            var (confirmationOk, confirmationMessage) = ValidationHelper.ValidatePasswordMatch(password, confirmPassword);
+            if (!confirmationOk)
             {
-                MessageBox.Show("Passwords do not match.", "Registration Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
+                MessageBox.Show(message);
             }
 
-            // Attempt to register the user
-            var (success, dbMessage) = dbHelper.RegisterUser(username, password);
 
+            var (success, dbMessage) = dbHelper.RegisterUser(username, password);
             if (success)
             {
                 MessageBox.Show(dbMessage, "Registration Successful",
@@ -54,6 +62,7 @@ namespace schedulingApp
                 MessageBox.Show(dbMessage, "Registration Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+
         }
 
         private void bttnExit_Click(object sender, EventArgs e)

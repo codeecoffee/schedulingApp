@@ -16,7 +16,7 @@ namespace schedulingApp
             connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
             this.currentUser = currentUser;
         }
-        //Opens the connection and Setup the DB if no costumer is found on the DB. 
+        //[OK] Opens the connection and Setup the DB if no costumer is found on the DB. 
         public bool TestConnection()
         {
             try
@@ -33,6 +33,7 @@ namespace schedulingApp
                 return false;
             }
         }
+        
         //Calls the does the comparison to the DB Customers and calls the initialization
         public void SetupDatabase()
         {
@@ -49,7 +50,7 @@ namespace schedulingApp
             }
         }
 
-        // Method to validate user credentials
+        //[?] Method to validate user credentials - used in the Login Screen
         public bool ValidateUser(string username, string password)
         {
             try
@@ -76,37 +77,39 @@ namespace schedulingApp
             }
         }
 
-        // method to check if username already exists
-        public bool UsernameExists(string username)
-        {
-            try
+        //[Ok] method to check if username already exists
+        public (bool exists, string message) UsernameExists(string username)
+        {  
+            using (MySqlConnection connection = new MySqlConnection(connectionString))
             {
-                using (MySqlConnection connection = new MySqlConnection(connectionString))
-                {
-                    connection.Open();
-                    string query = "SELECT COUNT(*) FROM users WHERE username = @username";
+                connection.Open();
+                string query = "SELECT COUNT(*) FROM user WHERE username = @username";
 
-                    using (MySqlCommand command = new MySqlCommand(query, connection))
-                    {
-                        command.Parameters.AddWithValue("@username", username);
-                        int count = Convert.ToInt32(command.ExecuteScalar());
-                        return count > 0;
-                    }
+                using (MySqlCommand command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@username", username);
+                    int count = Convert.ToInt32(command.ExecuteScalar());
+
+                    //MessageBox.Show($"You hit [Func UsernameExists:DBHelper] and this is the user count: {count}");
+
+                    if (count > 0) { return (true, "Username already taken"); }
+                    else { return (false,""); }
+                   
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Database error: {ex.Message}");
-                return true; // Return true on error to prevent registration
-            }
         }
-        // method to register a new user
+
+        // [Ok] method to register a new user
         public (bool success, string message) RegisterUser(string username, string password)
         {
             try
             {
-                // First check if username already exists
-                if (UsernameExists(username))
+                bool userIsInDB = UsernameExists(username).exists;
+
+                //MessageBox.Show($"[Func RegisterUser] this is the value on userIsInDB: {userIsInDB }");
+                
+                //First check if username already exists
+                if (userIsInDB)
                 {
                     return (false, "Username already exists.");
                 }
@@ -142,6 +145,7 @@ namespace schedulingApp
                 return (false, $"Registration error: {ex.Message}");
             }
         }
+        
         public DataRow GetUserDetails(string username)
         {
             try
