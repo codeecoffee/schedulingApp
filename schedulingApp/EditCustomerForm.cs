@@ -56,6 +56,7 @@ namespace schedulingApp
             }
         }
 
+        //old
         private void bttnModify_Click(object sender, EventArgs e)
         {
             if (currentCustomerId == -1)
