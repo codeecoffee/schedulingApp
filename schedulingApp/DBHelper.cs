@@ -271,7 +271,7 @@ namespace schedulingApp
         }
 
         public (bool success, string message) AddCustomer(string customerName, string address1, string address2,
-                   string city, string country, string postalCode, string phone)
+            string city, string country, string postalCode, string phone)
         {
             try
             {
@@ -282,51 +282,106 @@ namespace schedulingApp
                     {
                         try
                         {
-                            // Insert country
-                            int countryId = InsertCountry(connection, country);
 
-                            // Insert city
-                            int cityId = InsertCity(connection, city, countryId);
+                            // Insert country first and get the ID
+                            string countryQuery = @"INSERT INTO country (country, createDate, createdBy, lastUpdate, lastUpdateBy) 
+                                          VALUES (@country, @createDate, @createdBy, @lastUpdate, @lastUpdateBy);
+                                          SELECT LAST_INSERT_ID();";
 
-                            // Insert address
-                            int addressId = InsertAddress(connection, address1, address2, cityId, postalCode, phone);
-
-                            // Insert customer
-                            string customerQuery = @"INSERT INTO customer 
-                                (customerName, addressId, active, createDate, createdBy, lastUpdate, lastUpdateBy)
-                                VALUES 
-                                (@customerName, @addressId, 1, @createDate, @createdBy, @lastUpdate, @lastUpdateBy)";
-
-                            using (MySqlCommand command = new MySqlCommand(customerQuery, connection))
+                            int countryId;
+                            using (MySqlCommand cmd = new MySqlCommand(countryQuery, connection, transaction))
                             {
                                 DateTime now = DateTime.Now;
-                                command.Parameters.AddWithValue("@customerName", customerName);
-                                command.Parameters.AddWithValue("@addressId", addressId);
-                                command.Parameters.AddWithValue("@createDate", now);
-                                command.Parameters.AddWithValue("@createdBy", currentUser);
-                                command.Parameters.AddWithValue("@lastUpdate", now);
-                                command.Parameters.AddWithValue("@lastUpdateBy", currentUser);
+                                cmd.Parameters.AddWithValue("@country", country);
+                                cmd.Parameters.AddWithValue("@createDate", now);
+                                cmd.Parameters.AddWithValue("@createdBy", currentUser);
+                                cmd.Parameters.AddWithValue("@lastUpdate", now);
+                                cmd.Parameters.AddWithValue("@lastUpdateBy", currentUser);
+                                countryId = Convert.ToInt32(cmd.ExecuteScalar());
+                            }
+                            //MessageBox.Show("Country added");
+                            // Insert city and get the ID
+                            string cityQuery = @"INSERT INTO city (city, countryId, createDate, createdBy, lastUpdate, lastUpdateBy) 
+                                       VALUES (@city, @countryId, @createDate, @createdBy, @lastUpdate, @lastUpdateBy);
+                                       SELECT LAST_INSERT_ID();";
 
-                                command.ExecuteNonQuery();
+                            int cityId;
+                            //MessageBox.Show("City added");
+
+                            using (MySqlCommand cmd = new MySqlCommand(cityQuery, connection, transaction))
+                            {
+                                DateTime now = DateTime.Now;
+                                cmd.Parameters.AddWithValue("@city", city);
+                                cmd.Parameters.AddWithValue("@countryId", countryId);
+                                cmd.Parameters.AddWithValue("@createDate", now);
+                                cmd.Parameters.AddWithValue("@createdBy", currentUser);
+                                cmd.Parameters.AddWithValue("@lastUpdate", now);
+                                cmd.Parameters.AddWithValue("@lastUpdateBy", currentUser);
+                                cityId = Convert.ToInt32(cmd.ExecuteScalar());
+                            }
+                            //MessageBox.Show("City added");
+
+                            // Insert address and get the ID
+                            string addressQuery = @"INSERT INTO address 
+                        (address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdate, lastUpdateBy)
+                        VALUES 
+                        (@address, @address2, @cityId, @postalCode, @phone, @createDate, @createdBy, @lastUpdate, @lastUpdateBy);
+                        SELECT LAST_INSERT_ID();";
+
+                            int addressId;
+                            using (MySqlCommand cmd = new MySqlCommand(addressQuery, connection, transaction))
+                            {
+                                DateTime now = DateTime.Now;
+                                cmd.Parameters.AddWithValue("@address", address1);
+                                cmd.Parameters.AddWithValue("@address2", string.IsNullOrEmpty(address2) ? (object)DBNull.Value : address2);
+                                cmd.Parameters.AddWithValue("@cityId", cityId);
+                                cmd.Parameters.AddWithValue("@postalCode", string.IsNullOrEmpty(postalCode) ? (object)DBNull.Value : postalCode);
+                                cmd.Parameters.AddWithValue("@phone", phone);
+                                cmd.Parameters.AddWithValue("@createDate", now);
+                                cmd.Parameters.AddWithValue("@createdBy", currentUser);
+                                cmd.Parameters.AddWithValue("@lastUpdate", now);
+                                cmd.Parameters.AddWithValue("@lastUpdateBy", currentUser);
+                                addressId = Convert.ToInt32(cmd.ExecuteScalar());
+                            }
+                            //MessageBox.Show("Address added");
+
+                            // Finally insert customer
+                            string customerQuery = @"INSERT INTO customer 
+                        (customerName, addressId, active, createDate, createdBy, lastUpdate, lastUpdateBy)
+                        VALUES 
+                        (@customerName, @addressId, 1, @createDate, @createdBy, @lastUpdate, @lastUpdateBy);
+                        SELECT LAST_INSERT_ID();";
+
+                            using (MySqlCommand cmd = new MySqlCommand(customerQuery, connection, transaction))
+                            {
+                                DateTime now = DateTime.Now;
+                                cmd.Parameters.AddWithValue("@customerName", customerName);
+                                cmd.Parameters.AddWithValue("@addressId", addressId);
+                                cmd.Parameters.AddWithValue("@createDate", now);
+                                cmd.Parameters.AddWithValue("@createdBy", currentUser);
+                                cmd.Parameters.AddWithValue("@lastUpdate", now);
+                                cmd.Parameters.AddWithValue("@lastUpdateBy", currentUser);
+                                cmd.ExecuteNonQuery();
                             }
 
                             transaction.Commit();
+                            //MessageBox.Show("Customer added");
+
                             return (true, "Customer added successfully!");
                         }
                         catch (Exception ex)
                         {
                             transaction.Rollback();
-                            throw new Exception($"Error in transaction: {ex.Message}");
+                            return (false, $"Transaction error: {ex.Message}");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                return (false, $"Error adding customer: {ex.Message}");
+                return (false, $"Database connection error: {ex.Message}");
             }
         }
-
         // Get them all!!
         public DataTable GetAllCustomers()
         {

@@ -161,7 +161,7 @@ namespace schedulingApp
         {
             string filePath = Path.Combine(Application.StartupPath, "Login_History.txt");
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            MessageBox.Show("[Func Loglogin] You hit the function to log shit");
+            //MessageBox.Show("[Func Loglogin] You hit the function to log shit");
 
             // Append the username and timestamp to the text file
             try
@@ -173,7 +173,7 @@ namespace schedulingApp
                 {
                     writer.WriteLine($"{timestamp}: {username} logged in.");
                     writer.Flush(); // Ensure content is written immediately
-                    MessageBox.Show("[Func Loglogin] Function executed");
+                    //MessageBox.Show("[Func Loglogin] Function executed");
 
                 }
             }
