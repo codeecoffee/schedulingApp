@@ -779,11 +779,9 @@ namespace schedulingApp
 
             if (result == DialogResult.Yes)
             {
-                // Create and show a new instance of LoginForm
                 LoginForm loginForm = new LoginForm();
                 loginForm.Show();
 
-                // Close the current form (MainForm)
                 this.Close();
             }
         }
