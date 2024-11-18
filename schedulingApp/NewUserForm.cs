@@ -29,6 +29,7 @@ namespace schedulingApp
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            
             //MessageBox.Show($"This is what password is: {password} and this is what confirmpass is: {confirmPassword}");
            //2.check if pass and confirmation match
             if (password != confirmPassword)
@@ -37,14 +38,6 @@ namespace schedulingApp
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-
-            ////2. Check if passwords match  
-            //var (confirmationOk, confirmationMessage) = ValidationHelper.ValidatePasswordMatch(password, confirmPassword);
-            //if (!confirmationOk)
-            //{
-            //    MessageBox.Show(message);
-            //}
-
 
             var (success, dbMessage) = dbHelper.RegisterUser(username, password);
             if (success)

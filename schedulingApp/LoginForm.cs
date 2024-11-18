@@ -116,6 +116,9 @@ namespace schedulingApp
                     "",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
+                
+                //Log the login attempt to the file 
+                LogLogin(username);
 
                 // Open main form
                 MainForm mainForm = new MainForm();
@@ -155,20 +158,27 @@ namespace schedulingApp
         }
         private void LogLogin(string username)
         {
-            string filePath = "Login_History.txt";
+            string filePath = Path.Combine(Application.StartupPath, "Login_History.txt");
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            MessageBox.Show("[Func Loglogin] You hit the function to log shit");
 
             // Append the username and timestamp to the text file
             try
             {
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+
+                // Write to file
                 using (StreamWriter writer = new StreamWriter(filePath, true))
                 {
                     writer.WriteLine($"{timestamp}: {username} logged in.");
+                    writer.Flush(); // Ensure content is written immediately
+                    MessageBox.Show("[Func Loglogin] Function executed");
+
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to log the login: {ex.Message}");
+                MessageBox.Show($"Failed to log the login: {ex.Message}\nFile path: {filePath}");
             }
         }
 

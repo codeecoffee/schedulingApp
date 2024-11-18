@@ -15,7 +15,8 @@ namespace schedulingApp
     public partial class MainForm : Form
     {
         private readonly DatabaseHelper dbHelper;
-        private DateTime currentMonth = DateTime.Now;
+        //private DateTime currentMonth = DateTime.Now;
+        private DateTime currentMonth = new DateTime(2019, 1, 1);
         private DateTime? selectedDate = null;
 
         private Dictionary<DateTime, List<string>> appointments; //old
@@ -217,8 +218,13 @@ namespace schedulingApp
 
             foreach (DataRow row in appointments.Rows)
             {
-                string appointmentInfo = $"{row["customerName"]} - {Convert.ToDateTime(row["start"]).ToString("h:mm tt")}" +
-                                       $"\n{row["type"]}: {row["description"]}";
+                    string appointmentInfo =
+                $"Customer: {row["customerName"]}\n" +
+                $"Start: {Convert.ToDateTime(row["start"]).ToString("MM/dd/yyyy h:mm tt")}\n" +
+                $"End: {Convert.ToDateTime(row["end"]).ToString("MM/dd/yyyy h:mm tt")}\n" +
+                $"Type: {row["type"]}\n" +
+                $"Description: {row["description"]}";
+
                 appointmentList.Items.Add(appointmentInfo);
             }
         }
@@ -234,7 +240,7 @@ namespace schedulingApp
         {
             // Keep your existing configuration
             appointmentList.DrawMode = DrawMode.OwnerDrawFixed;
-            appointmentList.ItemHeight = 50;
+            appointmentList.ItemHeight = 100;
             appointmentList.DrawItem += AppointmentList_DrawItem;
 
             // Add double-click handler
@@ -309,18 +315,37 @@ namespace schedulingApp
             // Set margins (left: 20px, top: 10px)
             int marginLeft = 20;
             int marginTop = 10;
+            
+            //New
+            using (StringFormat sf = new StringFormat())
+            {
+                sf.LineAlignment = StringAlignment.Near;
+                e.Graphics.DrawString(appointmentText, appointmentFont, new SolidBrush(lb.ForeColor),
+                                    new RectangleF(e.Bounds.X + marginLeft, e.Bounds.Y + marginTop,
+                                                 e.Bounds.Width - marginLeft * 2, e.Bounds.Height - marginTop * 2),
+                                    sf);
+            }
 
-            // Draw the appointment text with margin and bold font if selected
-            e.Graphics.DrawString(appointmentText, appointmentFont, new SolidBrush(lb.ForeColor),
-                                  new PointF(e.Bounds.X + marginLeft, e.Bounds.Y + marginTop));
+            // Draw borders
+            using (Pen borderPen = new Pen(Color.Gray, 1))
+            {
+                e.Graphics.DrawLine(borderPen, e.Bounds.Left, e.Bounds.Top, e.Bounds.Right, e.Bounds.Top);
+                e.Graphics.DrawLine(borderPen, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
+            }
 
-            // Draw top and bottom border for the item
-            Pen borderPen = new Pen(Color.Gray, 1);
-            e.Graphics.DrawLine(borderPen, e.Bounds.Left, e.Bounds.Top, e.Bounds.Right, e.Bounds.Top);
-            e.Graphics.DrawLine(borderPen, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
-
-            // Ensure item is correctly drawn
             e.DrawFocusRectangle();
+
+            //// Draw the appointment text with margin and bold font if selected
+            //e.Graphics.DrawString(appointmentText, appointmentFont, new SolidBrush(lb.ForeColor),
+            //                      new PointF(e.Bounds.X + marginLeft, e.Bounds.Y + marginTop));
+
+            //// Draw top and bottom border for the item
+            //Pen borderPen = new Pen(Color.Gray, 1);
+            //e.Graphics.DrawLine(borderPen, e.Bounds.Left, e.Bounds.Top, e.Bounds.Right, e.Bounds.Top);
+            //e.Graphics.DrawLine(borderPen, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
+
+            //// Ensure item is correctly drawn
+            //e.DrawFocusRectangle();
         }
 
         private void appointmentList_SelectedIndexChanged(object sender, EventArgs e)
@@ -333,12 +358,31 @@ namespace schedulingApp
             calendarPanel.SuspendLayout();
             calendarPanel.Controls.Clear();
 
-            DateTime firstDayOfMonth = new DateTime(currentMonth.Year, currentMonth.Month, 1);
-            int daysInMonth = DateTime.DaysInMonth(currentMonth.Year, currentMonth.Month);
+            // Initialize calendar panel rows and columns if not already done
+            if (calendarPanel.ColumnCount != 7 || calendarPanel.RowCount != 7)
+            {
+                calendarPanel.ColumnCount = 7;
+                calendarPanel.RowCount = 7;
 
+                // Set column styles
+                calendarPanel.ColumnStyles.Clear();
+                for (int i = 0; i < 7; i++)
+                {
+                    calendarPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F / 7F));
+                }
+
+                // Set row styles
+                calendarPanel.RowStyles.Clear();
+                for (int i = 0; i < 7; i++)
+                {
+                    calendarPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F / 7F));
+                }
+            }
+
+            // Update month label
             labelMonth.Text = currentMonth.ToString("MMMM yyyy");
 
-            // Add day labels
+            // Add day headers
             string[] dayNames = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
             for (int i = 0; i < 7; i++)
             {
@@ -348,52 +392,76 @@ namespace schedulingApp
                     TextAlign = ContentAlignment.MiddleCenter,
                     Dock = DockStyle.Fill,
                     Font = new Font("Arial", 9, FontStyle.Bold),
-                    ForeColor = Color.White
+                    ForeColor = Color.Black
                 };
                 calendarPanel.Controls.Add(dayLabel, i, 0);
             }
 
-            // Get appointment counts for the month
+            // Get first day and number of days in month
+            DateTime firstDay = new DateTime(currentMonth.Year, currentMonth.Month, 1);
+            int daysInMonth = DateTime.DaysInMonth(currentMonth.Year, currentMonth.Month);
+            int dayOfWeek = (int)firstDay.DayOfWeek;
+
+            // Get appointment counts
             var appointmentCounts = dbHelper.GetMonthlyAppointmentCounts(currentMonth);
 
-            int dayOffset = (int)firstDayOfMonth.DayOfWeek;
-
-            // Create buttons for each day
-            for (int day = 1; day <= daysInMonth; day++)
+            // Fill in the calendar
+            int currentDay = 1;
+            for (int row = 1; row < 7; row++)
             {
-                DateTime date = new DateTime(currentMonth.Year, currentMonth.Month, day);
-                Button dayButton = new Button
+                for (int col = 0; col < 7; col++)
                 {
-                    Text = day.ToString(),
-                    Dock = DockStyle.Fill,
-                    Tag = date,
-                    FlatStyle = FlatStyle.Flat
-                };
+                    if (row == 1 && col < dayOfWeek)
+                    {
+                        // Empty cells before first day of month
+                        continue;
+                    }
 
-                // Style the button based on appointments
-                if (appointmentCounts.ContainsKey(date))
-                {
-                    dayButton.BackColor = Color.LightGreen;
-                    dayButton.Text = $"{day}\n({appointmentCounts[date]})";
-                }
-                else
-                {
-                    dayButton.BackColor = Color.White;
-                }
+                    if (currentDay > daysInMonth)
+                    {
+                        // Empty cells after last day of month
+                        continue;
+                    }
 
-                // Highlight selected date
-                if (selectedDate.HasValue && date.Date == selectedDate.Value.Date)
-                {
-                    dayButton.BackColor = Color.Yellow;
-                }
+                    DateTime currentDate = new DateTime(currentMonth.Year, currentMonth.Month, currentDay);
+                    Button dayButton = new Button
+                    {
+                        Text = currentDay.ToString(),
+                        Tag = currentDate,
+                        Dock = DockStyle.Fill,
+                        FlatStyle = FlatStyle.Flat,
+                        Margin = new Padding(2),
+                        Font = new Font("Arial", 9F)
+                    };
 
-                dayButton.Click += (sender, e) => OnDaySelected(date);
-                calendarPanel.Controls.Add(dayButton, (dayOffset + day - 1) % 7, (dayOffset + day - 1) / 7 + 1);
+                    // Style based on appointments
+                    if (appointmentCounts.ContainsKey(currentDate))
+                    {
+                        dayButton.BackColor = Color.LightGreen;
+                        dayButton.Text = $"{currentDay}\n({appointmentCounts[currentDate]})";
+                    }
+                    else
+                    {
+                        dayButton.BackColor = Color.White;
+                    }
+
+                    // Highlight selected date
+                    if (selectedDate.HasValue && currentDate.Date == selectedDate.Value.Date)
+                    {
+                        dayButton.BackColor = Color.Yellow;
+                    }
+
+                    // Add click handler
+                    dayButton.Click += (sender, e) => OnDaySelected(currentDate);
+
+                    // Add button to calendar
+                    calendarPanel.Controls.Add(dayButton, col, row);
+                    currentDay++;
+                }
             }
 
             calendarPanel.ResumeLayout();
         }
-
         // Handle when a day is clicked
         private void OnDaySelected(DateTime date)
         {
@@ -414,12 +482,16 @@ namespace schedulingApp
         private void bttnPreviosMonth_Click(object sender, EventArgs e)
         {
             currentMonth = currentMonth.AddMonths(-1);
+            selectedDate = null; // Reset selected date when changing months
             DisplayCalendar();
+            UpdateAppointmentList();
         }
         private void bttnNextMonth_Click(object sender, EventArgs e)
         {
             currentMonth = currentMonth.AddMonths(1);
+            selectedDate = null; // Reset selected date when changing months
             DisplayCalendar();
+            UpdateAppointmentList();
         }
         public class DoubleBufferedTableLayoutPanel : TableLayoutPanel
         {
@@ -702,7 +774,18 @@ namespace schedulingApp
 
         private void bttnLogout_Click(object sender, EventArgs e)
         {
+            DialogResult result = MessageBox.Show("Are you sure you want to log out?",
+                "Confirm Logout", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
+            if (result == DialogResult.Yes)
+            {
+                // Create and show a new instance of LoginForm
+                LoginForm loginForm = new LoginForm();
+                loginForm.Show();
+
+                // Close the current form (MainForm)
+                this.Close();
+            }
         }
     }
 }
