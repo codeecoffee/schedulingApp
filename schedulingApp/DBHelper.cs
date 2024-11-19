@@ -6,6 +6,7 @@ using System.Configuration;
 
 namespace schedulingApp
 {
+
     public class DatabaseHelper
     {
         private readonly string connectionString;
