@@ -122,8 +122,12 @@ namespace schedulingApp
         {
             if (CustomerComboBox.SelectedValue != null)
             {
-                selectedCustomerId = Convert.ToInt32(CustomerComboBox.SelectedValue);
+                DataRowView drv = (DataRowView)CustomerComboBox.SelectedItem;
+                selectedCustomerId = Convert.ToInt32(drv["customerId"]); 
                 LoadAppointments(selectedCustomerId);
+
+                //selectedCustomerId = Convert.ToInt32(CustomerComboBox.SelectedValue);
+                //LoadAppointments(selectedCustomerId);
             }
             else
             {

@@ -40,7 +40,6 @@
             labelCity = new Label();
             titleLabel = new Label();
             CustomerCityInput = new TextBox();
-            customersDataGridView = new DataGridView();
             labelAddress2 = new Label();
             labelName = new Label();
             CustomerAddress2Input = new TextBox();
@@ -49,6 +48,7 @@
             CustomerAddressInput = new TextBox();
             CustomerPhoneInput = new TextBox();
             labelAddress = new Label();
+            customersDataGridView = new DataGridView();
             panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)customersDataGridView).BeginInit();
             SuspendLayout();
@@ -56,6 +56,7 @@
             // panel1
             // 
             panel1.BackgroundImage = Properties.Resources.darkerBg;
+            panel1.Controls.Add(customersDataGridView);
             panel1.Controls.Add(labelCountry);
             panel1.Controls.Add(bttnDeleteCustomer);
             panel1.Controls.Add(CustomerCountryInput);
@@ -67,7 +68,6 @@
             panel1.Controls.Add(labelCity);
             panel1.Controls.Add(titleLabel);
             panel1.Controls.Add(CustomerCityInput);
-            panel1.Controls.Add(customersDataGridView);
             panel1.Controls.Add(labelAddress2);
             panel1.Controls.Add(labelName);
             panel1.Controls.Add(CustomerAddress2Input);
@@ -82,7 +82,6 @@
             panel1.Name = "panel1";
             panel1.Size = new Size(1276, 789);
             panel1.TabIndex = 0;
-            panel1.Paint += panel1_Paint;
             // 
             // labelCountry
             // 
@@ -106,6 +105,7 @@
             bttnDeleteCustomer.TabIndex = 23;
             bttnDeleteCustomer.Text = "Delete";
             bttnDeleteCustomer.UseVisualStyleBackColor = false;
+            bttnDeleteCustomer.Click += bttnDeleteCustomer_Click;
             // 
             // CustomerCountryInput
             // 
@@ -144,6 +144,7 @@
             bttnExit.TabIndex = 17;
             bttnExit.Text = "Exit";
             bttnExit.UseVisualStyleBackColor = false;
+            bttnExit.Click += bttnExit_Click;
             // 
             // CustomerPostalCodeInput
             // 
@@ -164,6 +165,7 @@
             bttnModify.TabIndex = 16;
             bttnModify.Text = "Modify";
             bttnModify.UseVisualStyleBackColor = false;
+            bttnModify.Click += bttnModify_Click;
             // 
             // labelCity
             // 
@@ -192,16 +194,6 @@
             CustomerCityInput.Name = "CustomerCityInput";
             CustomerCityInput.Size = new Size(214, 23);
             CustomerCityInput.TabIndex = 30;
-            // 
-            // customersDataGridView
-            // 
-            customersDataGridView.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            customersDataGridView.Location = new Point(613, 145);
-            customersDataGridView.Margin = new Padding(3, 2, 3, 2);
-            customersDataGridView.Name = "customersDataGridView";
-            customersDataGridView.RowHeadersWidth = 51;
-            customersDataGridView.Size = new Size(572, 469);
-            customersDataGridView.TabIndex = 0;
             // 
             // labelAddress2
             // 
@@ -267,6 +259,14 @@
             labelAddress.TabIndex = 25;
             labelAddress.Text = "Address";
             // 
+            // customersDataGridView
+            // 
+            customersDataGridView.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            customersDataGridView.Location = new Point(656, 166);
+            customersDataGridView.Name = "customersDataGridView";
+            customersDataGridView.Size = new Size(558, 430);
+            customersDataGridView.TabIndex = 36;
+            // 
             // EditCustomerForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -286,7 +286,6 @@
         #endregion
 
         private Panel panel1;
-        private DataGridView customersDataGridView;
         private Label titleLabel;
         private Label CustomerGridLabel;
         private Button bttnExit;
@@ -306,5 +305,6 @@
         private TextBox CustomerAddressInput;
         private TextBox CustomerPhoneInput;
         private Label labelAddress;
+        private DataGridView customersDataGridView;
     }
 }

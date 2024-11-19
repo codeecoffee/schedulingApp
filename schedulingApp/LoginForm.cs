@@ -120,9 +120,9 @@ namespace schedulingApp
                 
                 //Log the login attempt to the file 
                 LogLogin(username);
-
+                DatabaseHelper.SetCurrentUser(username);
                 // Open main form
-                MainForm mainForm = new MainForm();
+                MainForm mainForm = new MainForm(username);
                 mainForm.Show();
                 this.Hide();
             }

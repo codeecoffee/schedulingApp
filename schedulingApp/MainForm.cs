@@ -46,7 +46,7 @@ namespace schedulingApp
             // Add the click event handler
             bttnReports.Click += new EventHandler(bttnReports_Click);
         }
-        public MainForm()
+        public MainForm(string username)
         {
 
             InitializeComponent();

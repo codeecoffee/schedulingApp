@@ -104,10 +104,25 @@ namespace schedulingApp
             if (string.IsNullOrWhiteSpace(phone))
                 return (false, "Phone number is required.");
 
+            // Count the number of dashes
+            int dashCount = phone.Count(c => c == '-');
+
+            // Check if there's more than one dash
+            if (dashCount > 1)
+                return (false, "Phone number can only contain one dash.");
+
+            // Check if all other characters are digits
+            foreach (char c in phone)
+            {
+                if (c != '-' && !char.IsDigit(c))
+                    return (false, "Phone number can only contain numbers and one dash.");
+            }
+
             if (phone.Length > 20)
                 return (false, "Phone number cannot exceed 20 characters.");
 
             return (true, string.Empty);
+        
         }
 
         // City validation

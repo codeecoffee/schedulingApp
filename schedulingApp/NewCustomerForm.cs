@@ -15,8 +15,8 @@ namespace schedulingApp
 
         private void bttnExit_Click(object sender, EventArgs e)
         {
-            MainForm mainForm = new MainForm();
-            mainForm.Show();
+            //MainForm mainForm = new MainForm();
+            //mainForm.Show();
             this.Close();
         }
 
@@ -138,8 +138,8 @@ namespace schedulingApp
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                     // Return to main form
-                    MainForm mainForm = new MainForm();
-                    mainForm.Show();
+                    //MainForm mainForm = new MainForm();
+                    //mainForm.Show();
                     this.Close();
                 }
                 else
