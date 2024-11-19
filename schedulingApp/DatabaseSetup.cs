@@ -6,7 +6,7 @@ namespace schedulingApp
 {
     public class DatabaseSetup
     {
-
+        //comments 
         public bool InitializeDatabase(string connectionString)
         {
             try
