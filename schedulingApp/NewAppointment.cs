@@ -171,7 +171,7 @@ namespace schedulingApp
                     MessageBox.Show(
                         $"Appointments must be scheduled within business hours:\n\n" +
                         $"Your local time: {localStart:HH:mm} - {localEnd:HH:mm}\n" +
-                        $"Pacific Time: 09:00 - 17:00\n\n" +
+                        $"Eastern Time: 09:00 - 17:00\n\n" +
                         $"Please adjust your appointment time.",
                         "Validation Error",
                         MessageBoxButtons.OK,

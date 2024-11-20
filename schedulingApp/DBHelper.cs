@@ -361,7 +361,7 @@ namespace schedulingApp
                                 cmd.Parameters.AddWithValue("@lastUpdateBy", _currentUser);
                                 addressId = Convert.ToInt32(cmd.ExecuteScalar());
                             }
-                            MessageBox.Show("Address added");
+                           //MessageBox.Show("Address added");
 
                             // Finally insert customer
                             string customerQuery = @"INSERT INTO customer 

@@ -279,7 +279,6 @@ namespace schedulingApp
             editForm.FormClosed += (s, args) =>
             {
                 this.Show();
-                // Refresh the calendar and appointment list
                 DisplayCalendar();
                 UpdateAppointmentList();
             };
@@ -670,7 +669,15 @@ namespace schedulingApp
 
         private void bttnNewCustomer_Click(object sender, EventArgs e)
         {
+
             NewCustomerForm newCustomerForm = new NewCustomerForm();
+            newCustomerForm.FormClosed += (s, args) =>
+            {
+                this.Show();
+                // Refresh any necessary data
+                DisplayCalendar();
+                UpdateAppointmentList();
+            };
             newCustomerForm.Show();
             this.Hide();
         }
@@ -695,7 +702,6 @@ namespace schedulingApp
             newAppointmentForm.FormClosed += (s, args) =>
             {
                 this.Show();
-                // Refresh the calendar and appointment list
                 DisplayCalendar();
                 UpdateAppointmentList();
             };

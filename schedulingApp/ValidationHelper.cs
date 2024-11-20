@@ -186,7 +186,7 @@ namespace schedulingApp
             var (isCountryValid, countryMessage) = ValidateCountry(country);
             if (!isCountryValid)
                 return (false, countryMessage);
-            MessageBox.Show("[Func validateCustomerName] antes do retorno");
+            //MessageBox.Show("[Func validateCustomerName] antes do retorno");
 
             return (true, string.Empty);
         }
