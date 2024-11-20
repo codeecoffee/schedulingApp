@@ -132,12 +132,28 @@ namespace schedulingApp
             DateTime startUtc = TimeZoneInfo.ConvertTimeToUtc(StartDatePicker.Value);
             DateTime endUtc = TimeZoneInfo.ConvertTimeToUtc(EndDatePicker.Value);
 
-            if (dbHelper.HasOverlappingAppointments(
-                Convert.ToInt32(CustomerComboBox.SelectedValue),
-                startUtc,
-                endUtc,
-                currentAppointmentId))
-                return (false, "This time slot overlaps with another appointment.");
+            //TODO!! CHECK THIS 
+            //old
+            //if (dbHelper.HasOverlappingAppointments(
+            //    Convert.ToInt32(CustomerComboBox.SelectedValue),
+            //    startUtc,
+            //    endUtc,
+            //    currentAppointmentId))
+            //    return (false, "This time slot overlaps with another appointment.");
+
+            //new
+            DataTable existingAppointments = dbHelper.GetAllAppointments();
+            if (!AppointmentHelper.HasOverlappingAppointments(StartDatePicker.Value, EndDatePicker.Value, existingAppointments))
+            {
+                MessageBox.Show(
+                   "This appointment overlaps with an existing appointment.\n" +
+                   "Please choose a different time.",
+                   "Validation Error",
+                   MessageBoxButtons.OK,
+                   MessageBoxIcon.Warning);
+                return(false, "Check if condition for hasOverlappingAppt, inside of FUNC: ValidateAppointmentInput file: EditAppointment ");
+
+            }
 
             return (true, string.Empty);
         }

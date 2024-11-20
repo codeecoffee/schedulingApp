@@ -179,6 +179,20 @@ namespace schedulingApp
                     return;
                 }
 
+
+                DataTable existingAppointments = dbHelper.GetAllAppointments();
+                if (!AppointmentHelper.HasOverlappingAppointments(startTime, endTime,existingAppointments)) 
+                {
+                    MessageBox.Show(
+                       "This appointment overlaps with an existing appointment.\n" +
+                       "Please choose a different time.",
+                       "Validation Error",
+                       MessageBoxButtons.OK,
+                       MessageBoxIcon.Warning);
+                    return;
+
+                }
+
                 // Add appointment
                 var (success, message) = dbHelper.AddAppointment(
                     selectedCustomerId.Value,
