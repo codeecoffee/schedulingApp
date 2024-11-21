@@ -10,17 +10,20 @@ namespace schedulingApp
         private int currentAppointmentId;
         private int currentCustomerId;
         private int currentUserId;
+        private ComboBox TimeZoneComboBox;
+        private Label TimezoneInfoLabel;
 
         public EditAppointments(int appointmentId)
         {
             InitializeComponent();
             dbHelper = new DatabaseHelper();
             currentAppointmentId = appointmentId;
+            InitializeTimezoneControls();
 
-            // Wire up events
             bttnSaveChanges.Click += BttnSaveChanges_Click;
             bttnExit.Click += BttnExit_Click;
             this.Load += EditAppointments_Load;
+            TimeZoneComboBox.SelectedIndexChanged += TimeZoneComboBox_SelectedIndexChanged;
 
             // Set minimum date for date pickers
             StartDatePicker.Format = DateTimePickerFormat.Custom;
@@ -35,7 +38,77 @@ namespace schedulingApp
             StartDatePicker.ValueChanged += DatePicker_ValueChanged;
             EndDatePicker.ValueChanged += DatePicker_ValueChanged;
         }
+        private void InitializeTimezoneControls()
+        {
+            // Create timezone combo box
+            TimeZoneComboBox = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Location = new Point(StartDatePicker.Left, StartDatePicker.Bottom + 20),
+                Width = 300,
+                Font = new Font("Segoe UI", 9F)
+            };
 
+            // Create timezone info label
+            TimezoneInfoLabel = new Label
+            {
+                AutoSize = true,
+                Location = new Point(TimeZoneComboBox.Left, TimeZoneComboBox.Bottom + 10),
+                Font = new Font("Segoe UI", 9F),
+                ForeColor = Color.Black
+            };
+
+            // Add controls to form
+            this.Controls.Add(TimeZoneComboBox);
+            this.Controls.Add(TimezoneInfoLabel);
+
+            // Populate timezone combo box
+            var timeZones = AppointmentHelper.GetAvailableTimeZones();
+            TimeZoneComboBox.DataSource = timeZones;
+            TimeZoneComboBox.DisplayMember = "DisplayName";
+            TimeZoneComboBox.ValueMember = "Id";
+
+            // Set default to local timezone
+            TimeZoneComboBox.SelectedValue = TimeZoneInfo.Local.Id;
+        }
+
+        private void TimeZoneComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (TimeZoneComboBox.SelectedValue == null) return;
+
+            try
+            {
+                // Update timezone info
+                string selectedTimeZoneId = TimeZoneComboBox.SelectedValue.ToString();
+                TimezoneInfoLabel.Text = AppointmentHelper.GetTimeZoneInfoMessage(selectedTimeZoneId);
+
+                // Adjust appointment times for selected timezone
+                var (adjustedStart, adjustedEnd) = AppointmentHelper.AdjustAppointmentTimesForTimeZone(
+                    StartDatePicker.Value,
+                    EndDatePicker.Value,
+                    TimeZoneInfo.Local.Id,
+                    selectedTimeZoneId);
+
+                // Update date pickers (temporarily remove event handlers)
+                StartDatePicker.ValueChanged -= DatePicker_ValueChanged;
+                EndDatePicker.ValueChanged -= DatePicker_ValueChanged;
+
+                if (adjustedStart >= StartDatePicker.MinDate)
+                    StartDatePicker.Value = adjustedStart;
+                if (adjustedEnd >= EndDatePicker.MinDate)
+                    EndDatePicker.Value = adjustedEnd;
+
+                // Reattach event handlers
+                StartDatePicker.ValueChanged += DatePicker_ValueChanged;
+                EndDatePicker.ValueChanged += DatePicker_ValueChanged;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error adjusting timezone: {ex.Message}",
+                    "Timezone Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        
         private void EditAppointments_Load(object sender, EventArgs e)
         {
             LoadAppointmentData();

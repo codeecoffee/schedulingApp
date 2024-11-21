@@ -14,13 +14,16 @@ namespace schedulingApp
     {
         private readonly DatabaseHelper dbHelper;
         private int? selectedCustomerId = null;
-        private readonly Label timezoneInfoLabel;
+        private Label timezoneInfoLabel;
         private readonly Label businessHoursLabel;
+        private ComboBox TimeZoneComboBox;
 
         public NewAppointment()
         {
             InitializeComponent();
             dbHelper = new DatabaseHelper();
+
+            InitializeTimezoneControls();
 
             // Add timezone info label
             timezoneInfoLabel = new Label
@@ -33,6 +36,7 @@ namespace schedulingApp
             };
             panel1.Controls.Add(timezoneInfoLabel);
 
+            
             // Add business hours label
             businessHoursLabel = new Label
             {
@@ -40,15 +44,105 @@ namespace schedulingApp
                 Location = new Point(92, timezoneInfoLabel.Bottom + 10),
                 Font = new Font("Segoe UI", 9F, FontStyle.Regular),
                 ForeColor = Color.White,
-                Text = AppointmentHelper.BusinessHours.GetBusinessHoursMessage(DateTime.Now)
             };
             panel1.Controls.Add(businessHoursLabel);
 
             InitializeForm();
             LoadCustomers();
             LoadAppointments();
+            UpdateTimezoneInfo();
         }
 
+        private void InitializeTimezoneControls()
+        {
+            // Create timezone combo box
+            TimeZoneComboBox = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Location = new Point(92, EndDatePicker.Bottom + 20),
+                Width = 300,
+                Font = new Font("Segoe UI", 9F),
+                ForeColor = Color.Black,
+                BackColor = Color.White
+            };
+
+            // Add timezone info label
+            timezoneInfoLabel = new Label
+            {
+                AutoSize = true,
+                Location = new Point(92, TimeZoneComboBox.Bottom + 10),
+                Font = new Font("Segoe UI", 9F, FontStyle.Regular),
+                ForeColor = Color.White,
+            };
+
+            // Add controls to panel
+            panel1.Controls.Add(TimeZoneComboBox);
+            panel1.Controls.Add(timezoneInfoLabel);
+
+            // Populate timezone combo box
+            var timeZones = AppointmentHelper.GetAvailableTimeZones();
+            TimeZoneComboBox.DataSource = timeZones;
+            TimeZoneComboBox.DisplayMember = "DisplayName";
+            TimeZoneComboBox.ValueMember = "Id";
+
+            // Set default to local timezone
+            TimeZoneComboBox.SelectedValue = TimeZoneInfo.Local.Id;
+
+            // Add event handler
+            TimeZoneComboBox.SelectedIndexChanged += TimeZoneComboBox_SelectedIndexChanged;
+        }
+
+        private void TimeZoneComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (TimeZoneComboBox.SelectedValue == null) return;
+
+            try
+            {
+                UpdateTimezoneInfo();
+
+                // Adjust appointment times for selected timezone
+                string selectedTimeZoneId = TimeZoneComboBox.SelectedValue.ToString();
+                var (adjustedStart, adjustedEnd) = AppointmentHelper.AdjustAppointmentTimesForTimeZone(
+                    StartDatePicker.Value,
+                    EndDatePicker.Value,
+                    TimeZoneInfo.Local.Id,
+                    selectedTimeZoneId);
+
+                // Update date pickers (temporarily remove event handlers)
+                StartDatePicker.ValueChanged -= DatePicker_ValueChanged;
+                EndDatePicker.ValueChanged -= DatePicker_ValueChanged;
+
+                if (adjustedStart >= StartDatePicker.MinDate)
+                    StartDatePicker.Value = adjustedStart;
+                if (adjustedEnd >= EndDatePicker.MinDate)
+                    EndDatePicker.Value = adjustedEnd;
+
+                // Reattach event handlers
+                StartDatePicker.ValueChanged += DatePicker_ValueChanged;
+                EndDatePicker.ValueChanged += DatePicker_ValueChanged;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error adjusting timezone: {ex.Message}",
+                    "Timezone Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void UpdateTimezoneInfo()
+        {
+            if (TimeZoneComboBox.SelectedValue == null) return;
+
+            string selectedTimeZoneId = TimeZoneComboBox.SelectedValue.ToString();
+            timezoneInfoLabel.Text = AppointmentHelper.GetTimeZoneInfoMessage(selectedTimeZoneId);
+
+            var (start, end) = AppointmentHelper.GetAdjustedBusinessHours(DateTime.Now, selectedTimeZoneId);
+            businessHoursLabel.Text = $"Business Hours in Your Timezone: {start:HH:mm} - {end:HH:mm}";
+        }
+
+        private void DatePicker_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateTimezoneInfo();
+        }
         private void InitializeForm()
         {
             // Set up date/time pickers
@@ -75,10 +169,11 @@ namespace schedulingApp
             bttnExit.Click += BttnExit_Click;
         }
 
-        private void DatePicker_ValueChanged(object sender, EventArgs e)
-        {
-            businessHoursLabel.Text = AppointmentHelper.BusinessHours.GetBusinessHoursMessage(StartDatePicker.Value);
-        }
+        //old
+        //private void DatePicker_ValueChanged(object sender, EventArgs e)
+        //{
+        //    businessHoursLabel.Text = AppointmentHelper.BusinessHours.GetBusinessHoursMessage(StartDatePicker.Value);
+        //}
 
         private void LoadCustomers()
         {
@@ -88,7 +183,6 @@ namespace schedulingApp
             CustomerComboBox.ValueMember = "customerId";
             CustomerComboBox.SelectedIndex = -1;
         }
-
         private void LoadAppointments(int? customerId = null)
         {
             DataTable appointments = customerId.HasValue ?
@@ -98,26 +192,27 @@ namespace schedulingApp
             AppointmentsDataGridView.Rows.Clear();
             if (appointments != null && appointments.Rows.Count > 0)
             {
+                string selectedTimeZoneId = TimeZoneComboBox.SelectedValue?.ToString() ?? TimeZoneInfo.Local.Id;
+
                 foreach (DataRow row in appointments.Rows)
                 {
-                    DateTime start = TimeZoneInfo.ConvertTimeFromUtc(
-                        ((DateTime)row["start"]).ToUniversalTime(),
-                        TimeZoneInfo.Local);
-                    DateTime end = TimeZoneInfo.ConvertTimeFromUtc(
-                        ((DateTime)row["end"]).ToUniversalTime(),
-                        TimeZoneInfo.Local);
+                    DateTime startUtc = ((DateTime)row["start"]).ToUniversalTime();
+                    DateTime endUtc = ((DateTime)row["end"]).ToUniversalTime();
+
+                    var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(selectedTimeZoneId);
+                    DateTime start = TimeZoneInfo.ConvertTimeFromUtc(startUtc, userTimeZone);
+                    DateTime end = TimeZoneInfo.ConvertTimeFromUtc(endUtc, userTimeZone);
 
                     AppointmentsDataGridView.Rows.Add(
                         row["customerName"],
                         row["title"],
-                        AppointmentHelper.FormatTimeWithZones(start),
-                        AppointmentHelper.FormatTimeWithZones(end),
+                        AppointmentHelper.FormatAppointmentTimeZones(start, selectedTimeZoneId),
+                        AppointmentHelper.FormatAppointmentTimeZones(end, selectedTimeZoneId),
                         row["type"]
                     );
                 }
             }
         }
-
         private void CustomerComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (CustomerComboBox.SelectedValue != null)
@@ -135,7 +230,6 @@ namespace schedulingApp
                 LoadAppointments();
             }
         }
-
         private void BttnCreate_Click(object sender, EventArgs e)
         {
             try
@@ -154,6 +248,7 @@ namespace schedulingApp
                     return;
                 }
 
+                string selectedTimeZoneId = TimeZoneComboBox.SelectedValue.ToString();
                 DateTime startTime = StartDatePicker.Value;
                 DateTime endTime = EndDatePicker.Value;
 
@@ -164,13 +259,20 @@ namespace schedulingApp
                     return;
                 }
 
+                // Convert times to UTC for business hours check
+                var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(selectedTimeZoneId);
+                DateTime startUtc = TimeZoneInfo.ConvertTimeToUtc(startTime, userTimeZone);
+                DateTime endUtc = TimeZoneInfo.ConvertTimeToUtc(endTime, userTimeZone);
+
                 // Validate business hours
-                if (!AppointmentHelper.IsWithinBusinessHours(startTime, endTime))
+                if (!AppointmentHelper.IsWithinBusinessHours(
+                    TimeZoneInfo.ConvertTimeFromUtc(startUtc, TimeZoneInfo.Local),
+                    TimeZoneInfo.ConvertTimeFromUtc(endUtc, TimeZoneInfo.Local)))
                 {
-                    var (localStart, localEnd) = AppointmentHelper.BusinessHours.GetBusinessHoursInLocalTime(startTime.Date);
+                    var (localStart, localEnd) = AppointmentHelper.GetAdjustedBusinessHours(startTime.Date, selectedTimeZoneId);
                     MessageBox.Show(
                         $"Appointments must be scheduled within business hours:\n\n" +
-                        $"Your local time: {localStart:HH:mm} - {localEnd:HH:mm}\n" +
+                        $"Your timezone: {localStart:HH:mm} - {localEnd:HH:mm}\n" +
                         $"Eastern Time: 09:00 - 17:00\n\n" +
                         $"Please adjust your appointment time.",
                         "Validation Error",
@@ -179,9 +281,8 @@ namespace schedulingApp
                     return;
                 }
 
-
                 DataTable existingAppointments = dbHelper.GetAllAppointments();
-                if (AppointmentHelper.HasOverlappingAppointments(startTime, endTime,existingAppointments)) 
+                if (AppointmentHelper.HasOverlappingAppointments(startTime, endTime, existingAppointments))
                 {
                     MessageBox.Show(
                        "This appointment overlaps with an existing appointment.\n" +
@@ -190,10 +291,9 @@ namespace schedulingApp
                        MessageBoxButtons.OK,
                        MessageBoxIcon.Warning);
                     return;
-
                 }
 
-                // Add appointment
+                // Add appointment (convert to UTC for storage)
                 var (success, message) = dbHelper.AddAppointment(
                     selectedCustomerId.Value,
                     1, // Current user ID
@@ -203,8 +303,8 @@ namespace schedulingApp
                     ContactInput.Text.Trim(),
                     TypeInput.Text.Trim(),
                     URLInput.Text.Trim(),
-                    startTime,
-                    endTime
+                    startUtc,
+                    endUtc
                 );
 
                 if (success)
@@ -213,12 +313,6 @@ namespace schedulingApp
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
                     LoadAppointments(selectedCustomerId);
                     ClearForm();
-
-                    //Should keep? 
-                    // Return to main form
-                    //MainForm mainForm = new MainForm();
-                    //mainForm.Show();
-                    //this.Close();
                 }
                 else
                 {
@@ -231,7 +325,6 @@ namespace schedulingApp
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
         private void ClearForm()
         {
             TitleInput.Text = "";
@@ -243,7 +336,6 @@ namespace schedulingApp
             StartDatePicker.Value = DateTime.Now;
             EndDatePicker.Value = DateTime.Now.AddHours(1);
         }
-
         private void BttnExit_Click(object sender, EventArgs e)
         {
             this.Close();
