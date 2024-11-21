@@ -23,8 +23,13 @@ namespace schedulingApp
             this.Load += EditAppointments_Load;
 
             // Set minimum date for date pickers
-            StartDatePicker.MinDate = DateTime.Now.Date;
-            EndDatePicker.MinDate = DateTime.Now.Date;
+            StartDatePicker.Format = DateTimePickerFormat.Custom;
+            StartDatePicker.CustomFormat = "MM/dd/yyyy hh:mm tt";
+            EndDatePicker.Format = DateTimePickerFormat.Custom;
+            EndDatePicker.CustomFormat = "MM/dd/yyyy hh:mm tt";
+
+            StartDatePicker.MinDate = new DateTime(2019,1,1,6,0,0);
+            EndDatePicker.MinDate = new DateTime(2019, 1, 1, 6, 0, 0);
 
             // Handle date validation
             StartDatePicker.ValueChanged += DatePicker_ValueChanged;
@@ -142,18 +147,18 @@ namespace schedulingApp
             //    return (false, "This time slot overlaps with another appointment.");
 
             //new
-            DataTable existingAppointments = dbHelper.GetAllAppointments();
-            if (!AppointmentHelper.HasOverlappingAppointments(StartDatePicker.Value, EndDatePicker.Value, existingAppointments))
-            {
-                MessageBox.Show(
-                   "This appointment overlaps with an existing appointment.\n" +
-                   "Please choose a different time.",
-                   "Validation Error",
-                   MessageBoxButtons.OK,
-                   MessageBoxIcon.Warning);
-                return(false, "Check if condition for hasOverlappingAppt, inside of FUNC: ValidateAppointmentInput file: EditAppointment ");
+            //DataTable existingAppointments = dbHelper.GetAllAppointments();
+            //if (AppointmentHelper.HasOverlappingAppointments(StartDatePicker.Value, EndDatePicker.Value, existingAppointments))
+            //{
+            //    MessageBox.Show(
+            //       "This appointment overlaps with an existing appointment.\n" +
+            //       "Please choose a different time.",
+            //       "Validation Error",
+            //       MessageBoxButtons.OK,
+            //       MessageBoxIcon.Warning);
+            //    return(false, "Rethink your times (and life)");
 
-            }
+            //}
 
             return (true, string.Empty);
         }

@@ -37,15 +37,16 @@ namespace schedulingApp
         {
             if (existingAppointments == null || existingAppointments.Rows.Count == 0)
                 return false;
-
+            MessageBox.Show($"This is the start and end times received: start {newStartTime}, end {newEndTime} and dataTable: {existingAppointments}");
             // Convert new appointment times to UTC for comparison
             DateTime newStartUtc = TimeZoneInfo.ConvertTimeToUtc(newStartTime, LocalZone);
             DateTime newEndUtc = TimeZoneInfo.ConvertTimeToUtc(newEndTime, LocalZone);
 
             foreach (DataRow row in existingAppointments.Rows)
             {
-                DateTime existingStartUtc = ((DateTime)row["start"]).ToUniversalTime();
-                DateTime existingEndUtc = ((DateTime)row["end"]).ToUniversalTime();
+                DateTime existingStartUtc = ((DateTime)row["start"]);
+                DateTime existingEndUtc = ((DateTime)row["end"]);
+                MessageBox.Show($"This is the dataTable start/end time: {existingStartUtc} endtime: {existingEndUtc}");
 
                 // Check for overlap
                 if (!(newEndUtc <= existingStartUtc || newStartUtc >= existingEndUtc))

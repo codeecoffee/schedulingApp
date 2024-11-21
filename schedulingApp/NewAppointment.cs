@@ -181,7 +181,7 @@ namespace schedulingApp
 
 
                 DataTable existingAppointments = dbHelper.GetAllAppointments();
-                if (!AppointmentHelper.HasOverlappingAppointments(startTime, endTime,existingAppointments)) 
+                if (AppointmentHelper.HasOverlappingAppointments(startTime, endTime,existingAppointments)) 
                 {
                     MessageBox.Show(
                        "This appointment overlaps with an existing appointment.\n" +
