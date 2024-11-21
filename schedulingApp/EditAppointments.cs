@@ -28,8 +28,8 @@ namespace schedulingApp
             EndDatePicker.Format = DateTimePickerFormat.Custom;
             EndDatePicker.CustomFormat = "MM/dd/yyyy hh:mm tt";
 
-            StartDatePicker.MinDate = new DateTime(2019,1,1,6,0,0);
-            EndDatePicker.MinDate = new DateTime(2019, 1, 1, 6, 0, 0);
+            StartDatePicker.MinDate = new DateTime(2018,1,1,6,0,0);
+            EndDatePicker.MinDate = new DateTime(2018, 1, 1, 6, 0, 0);
 
             // Handle date validation
             StartDatePicker.ValueChanged += DatePicker_ValueChanged;
@@ -81,8 +81,15 @@ namespace schedulingApp
                         // Convert UTC times to local
                         DateTime startUtc = appointmentRow.Field<DateTime>("start");
                         DateTime endUtc = appointmentRow.Field<DateTime>("end");
-                        StartDatePicker.Value = TimeZoneInfo.ConvertTimeFromUtc(startUtc, TimeZoneInfo.Local);
-                        EndDatePicker.Value = TimeZoneInfo.ConvertTimeFromUtc(endUtc, TimeZoneInfo.Local);
+                        DateTime localStart = TimeZoneInfo.ConvertTimeFromUtc(startUtc, TimeZoneInfo.Local);
+                        DateTime localEnd = TimeZoneInfo.ConvertTimeFromUtc(endUtc, TimeZoneInfo.Local);
+                        //StartDatePicker.Value = TimeZoneInfo.ConvertTimeFromUtc(startUtc, TimeZoneInfo.Local);
+                        //EndDatePicker.Value = TimeZoneInfo.ConvertTimeFromUtc(endUtc, TimeZoneInfo.Local);
+
+
+                        StartDatePicker.Value = localStart < StartDatePicker.MinDate ? StartDatePicker.MinDate : localStart;
+                        EndDatePicker.Value = localEnd < EndDatePicker.MinDate ? EndDatePicker.MinDate : localEnd;
+
 
                         // Load current appointments for reference
                         RefreshAppointmentsGrid();
