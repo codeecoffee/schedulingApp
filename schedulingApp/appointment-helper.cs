@@ -18,6 +18,12 @@ namespace schedulingApp
         private static readonly TimeZoneInfo EasternZone = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
         private static readonly TimeZoneInfo LocalZone = TimeZoneInfo.Local;
 
+        public static class BusinessHours
+        {
+            public static TimeSpan Start => new TimeSpan(9, 0, 0);  // 9 AM
+            public static TimeSpan End => new TimeSpan(17, 0, 0);   // 5 PM
+        }
+
         public static List<TimeZoneDisplayInfo> GetAvailableTimeZones()
         {
             return TimeZoneInfo.GetSystemTimeZones()
@@ -30,6 +36,119 @@ namespace schedulingApp
                 })
                 .OrderBy(tz => tz.UtcOffset)
                 .ToList();
+        }
+
+        public static string GetTimeZoneInfoMessage(string timeZoneId)
+        {
+            try
+            {
+                var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+
+                // Set up the current time properly
+                DateTime now = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Local);
+
+                // Convert to UTC first, then to desired timezone
+                DateTime utcNow = TimeZoneInfo.ConvertTimeToUtc(now);
+                DateTime userTime = TimeZoneInfo.ConvertTimeFromUtc(utcNow, userTimeZone);
+                DateTime easternTime = TimeZoneInfo.ConvertTimeFromUtc(utcNow, EasternZone);
+
+                TimeSpan userOffset = userTimeZone.GetUtcOffset(utcNow);
+                TimeSpan easternOffset = EasternZone.GetUtcOffset(utcNow);
+                TimeSpan difference = userOffset - easternOffset;
+
+                bool userIsDst = userTimeZone.IsDaylightSavingTime(userTime);
+                bool easternIsDst = EasternZone.IsDaylightSavingTime(easternTime);
+
+                // Get business hours using UTC time
+                var (businessStart, businessEnd) = GetAdjustedBusinessHours(
+                    TimeZoneInfo.ConvertTimeFromUtc(utcNow, userTimeZone),
+                    timeZoneId);
+
+                return $"Your timezone: {userTimeZone.DisplayName}\n" +
+                       $"Current time in your zone: {userTime:HH:mm}\n" +
+                       $"Eastern time: {easternTime:HH:mm}\n" +
+                       $"Time difference with ET: {(difference.TotalHours > 0 ? "+" : "")}{difference.TotalHours:0.#} hours\n" +
+                       $"Your timezone {(userIsDst ? "is" : "is not")} in DST\n" +
+                       $"Eastern timezone {(easternIsDst ? "is" : "is not")} in DST\n\n" +
+                       $"Business hours in your timezone: {businessStart:HH:mm} - {businessEnd:HH:mm}";
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error getting timezone info: {ex.Message}");
+            }
+        }
+
+        public static (DateTime start, DateTime end) GetAdjustedBusinessHours(DateTime date, string userTimeZoneId)
+        {
+            try
+            {
+                var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(userTimeZoneId);
+
+                // Convert to UTC first
+                DateTime utcDate = TimeZoneInfo.ConvertTimeToUtc(date);
+
+                // Convert UTC to Eastern time
+                DateTime easternDate = TimeZoneInfo.ConvertTimeFromUtc(utcDate, EasternZone).Date;
+
+                // Create business hours in Eastern time
+                DateTime easternStart = easternDate.Add(BusinessHours.Start);
+                DateTime easternEnd = easternDate.Add(BusinessHours.End);
+
+                // Convert Eastern time to UTC
+                DateTime startUtc = TimeZoneInfo.ConvertTimeToUtc(easternStart, EasternZone);
+                DateTime endUtc = TimeZoneInfo.ConvertTimeToUtc(easternEnd, EasternZone);
+
+                // Convert UTC to user timezone
+                DateTime userStart = TimeZoneInfo.ConvertTimeFromUtc(startUtc, userTimeZone);
+                DateTime userEnd = TimeZoneInfo.ConvertTimeFromUtc(endUtc, userTimeZone);
+
+                return (userStart, userEnd);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error calculating business hours: {ex.Message}");
+            }
+        }
+
+        public static string FormatAppointmentTimeZones(DateTime appointmentTime, string userTimeZoneId)
+        {
+            try
+            {
+                var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(userTimeZoneId);
+                DateTime userTime = TimeZoneInfo.ConvertTime(appointmentTime, LocalZone, userTimeZone);
+                DateTime easternTime = TimeZoneInfo.ConvertTime(appointmentTime, LocalZone, EasternZone);
+
+                // Get timezone abbreviations
+                string userAbbr = GetTimeZoneAbbreviation(userTimeZone);
+
+                return $"[{userAbbr}] {userTime:MM/dd/yyyy hh:mm tt} (Your time)\n" +
+                       $"[EST] {easternTime:MM/dd/yyyy hh:mm tt}";
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error formatting appointment times: {ex.Message}");
+            }
+        }
+
+        private static string GetTimeZoneAbbreviation(TimeZoneInfo timeZone)
+        {
+            // Common abbreviations
+            if (timeZone.Id.Contains("Pacific"))
+                return "PST";
+            if (timeZone.Id.Contains("Mountain"))
+                return "MST";
+            if (timeZone.Id.Contains("Central"))
+                return "CST";
+            if (timeZone.Id.Contains("Eastern"))
+                return "EST";
+            if (timeZone.Id.Contains("Alaska"))
+                return "AKST";
+            if (timeZone.Id.Contains("Hawaii"))
+                return "HST";
+
+            // For other timezones, use UTC offset
+            var offset = timeZone.GetUtcOffset(DateTime.Now);
+            return $"UTC{(offset.Hours >= 0 ? "+" : "")}{offset.Hours}";
         }
 
         public static (DateTime start, DateTime end) AdjustAppointmentTimesForTimeZone(
@@ -58,82 +177,6 @@ namespace schedulingApp
                 throw new Exception($"Error adjusting timezone: {ex.Message}");
             }
         }
-        public static (DateTime start, DateTime end) GetAdjustedBusinessHours(
-           DateTime date,
-           string userTimeZoneId)
-        {
-            try
-            {
-                var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(userTimeZoneId);
-
-                // Create Eastern Time business hours (9 AM to 5 PM ET)
-                DateTime easternDate = TimeZoneInfo.ConvertTime(date, userTimeZone, EasternZone).Date;
-                DateTime easternStart = easternDate.Add(BusinessHours.Start);
-                DateTime easternEnd = easternDate.Add(BusinessHours.End);
-
-                // Convert back to user's timezone
-                DateTime userStart = TimeZoneInfo.ConvertTime(easternStart, EasternZone, userTimeZone);
-                DateTime userEnd = TimeZoneInfo.ConvertTime(easternEnd, EasternZone, userTimeZone);
-
-                return (userStart, userEnd);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error calculating business hours: {ex.Message}");
-            }
-        }
-
-        public static string GetTimeZoneInfoMessage(string timeZoneId)
-        {
-            try
-            {
-                var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
-                DateTime now = DateTime.Now;
-                DateTime userTime = TimeZoneInfo.ConvertTime(now, LocalZone, userTimeZone);
-                DateTime easternTime = TimeZoneInfo.ConvertTime(now, LocalZone, EasternZone);
-
-                TimeSpan userOffset = userTimeZone.GetUtcOffset(now);
-                TimeSpan easternOffset = EasternZone.GetUtcOffset(now);
-                TimeSpan difference = userOffset - easternOffset;
-
-                bool userIsDst = userTimeZone.IsDaylightSavingTime(now);
-                bool easternIsDst = EasternZone.IsDaylightSavingTime(now);
-
-                var (businessStart, businessEnd) = GetAdjustedBusinessHours(now, timeZoneId);
-
-                return $"Your timezone: {userTimeZone.DisplayName}\n" +
-                       $"Current time in your zone: {userTime:HH:mm}\n" +
-                       $"Eastern time: {easternTime:HH:mm}\n" +
-                       $"Time difference with ET: {(difference.TotalHours > 0 ? "+" : "")}{difference.TotalHours:0.#} hours\n" +
-                       $"Your timezone {(userIsDst ? "is" : "is not")} in DST\n" +
-                       $"Eastern timezone {(easternIsDst ? "is" : "is not")} in DST\n\n" +
-                       $"Business hours in your timezone: {businessStart:HH:mm} - {businessEnd:HH:mm}";
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error getting timezone info: {ex.Message}");
-            }
-        }
-
-        public static string FormatAppointmentTimeZones(DateTime appointmentTime, string userTimeZoneId)
-        {
-            try
-            {
-                var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(userTimeZoneId);
-                DateTime userTime = TimeZoneInfo.ConvertTime(appointmentTime, LocalZone, userTimeZone);
-                DateTime easternTime = TimeZoneInfo.ConvertTime(appointmentTime, LocalZone, EasternZone);
-                DateTime utcTime = TimeZoneInfo.ConvertTimeToUtc(appointmentTime, LocalZone);
-
-                return $"Your Time ({userTimeZone.StandardName}): {userTime:g}\n" +
-                       $"Eastern Time (ET): {easternTime:g}\n" +
-                       $"UTC: {utcTime:g}";
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error formatting appointment times: {ex.Message}");
-            }
-        }
-
 
         public static bool IsWithinBusinessHours(DateTime localStartTime, DateTime localEndTime)
         {
@@ -151,27 +194,23 @@ namespace schedulingApp
             }
 
             // Business hours: 9 AM to 5 PM ET
-            TimeSpan businessStart = new TimeSpan(9, 0, 0);
-            TimeSpan businessEnd = new TimeSpan(17, 0, 0);
-
-            return easternStart.TimeOfDay >= businessStart &&
-                   easternEnd.TimeOfDay <= businessEnd;
+            return easternStart.TimeOfDay >= BusinessHours.Start &&
+                   easternEnd.TimeOfDay <= BusinessHours.End;
         }
 
         public static bool HasOverlappingAppointments(DateTime newStartTime, DateTime newEndTime, DataTable existingAppointments)
         {
             if (existingAppointments == null || existingAppointments.Rows.Count == 0)
                 return false;
-            MessageBox.Show($"This is the start and end times received: start {newStartTime}, end {newEndTime} and dataTable: {existingAppointments}");
+
             // Convert new appointment times to UTC for comparison
             DateTime newStartUtc = TimeZoneInfo.ConvertTimeToUtc(newStartTime, LocalZone);
             DateTime newEndUtc = TimeZoneInfo.ConvertTimeToUtc(newEndTime, LocalZone);
 
             foreach (DataRow row in existingAppointments.Rows)
             {
-                DateTime existingStartUtc = ((DateTime)row["start"]);
-                DateTime existingEndUtc = ((DateTime)row["end"]);
-                MessageBox.Show($"This is the dataTable start/end time: {existingStartUtc} endtime: {existingEndUtc}");
+                DateTime existingStartUtc = ((DateTime)row["start"]).ToUniversalTime();
+                DateTime existingEndUtc = ((DateTime)row["end"]).ToUniversalTime();
 
                 // Check for overlap
                 if (!(newEndUtc <= existingStartUtc || newStartUtc >= existingEndUtc))
@@ -183,6 +222,25 @@ namespace schedulingApp
             return false;
         }
 
+        //public static string FormatAppointmentTimeZones(DateTime appointmentTime, string userTimeZoneId)
+        //{
+        //    try
+        //    {
+        //        var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(userTimeZoneId);
+        //        DateTime userTime = TimeZoneInfo.ConvertTime(appointmentTime, LocalZone, userTimeZone);
+        //        DateTime easternTime = TimeZoneInfo.ConvertTime(appointmentTime, LocalZone, EasternZone);
+        //        DateTime utcTime = TimeZoneInfo.ConvertTimeToUtc(appointmentTime, LocalZone);
+
+        //        return $"Your Time ({userTimeZone.StandardName}): {userTime:g}\n" +
+        //               $"Eastern Time (ET): {easternTime:g}\n" +
+        //               $"UTC: {utcTime:g}";
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw new Exception($"Error formatting appointment times: {ex.Message}");
+        //    }
+        //}
+        
         public static DateTime AdjustAppointmentTimeForTimeZone(DateTime appointmentTime, TimeZoneInfo sourceTimeZone, TimeZoneInfo targetTimeZone)
         {
             return TimeZoneInfo.ConvertTime(appointmentTime, sourceTimeZone, targetTimeZone);
@@ -258,34 +316,6 @@ namespace schedulingApp
                    $"Title: {appointment["title"]}\n" +
                    $"Time (Your local time): {localStart:g}\n" +
                    $"Time (Eastern Time): {easternStart:g}";
-        }
-
-        public static class BusinessHours
-        {
-            public static TimeSpan Start => new TimeSpan(9, 0, 0);  // 9 AM
-            public static TimeSpan End => new TimeSpan(17, 0, 0);   // 5 PM
-
-            public static (DateTime start, DateTime end) GetBusinessHoursInLocalTime(DateTime date)
-            {
-                // Create Eastern Time business hours
-                DateTime easternDate = TimeZoneInfo.ConvertTime(date, LocalZone, EasternZone).Date;
-                DateTime easternStart = easternDate.Add(Start);
-                DateTime easternEnd = easternDate.Add(End);
-
-                // Convert back to local time
-                DateTime localStart = TimeZoneInfo.ConvertTime(easternStart, EasternZone, LocalZone);
-                DateTime localEnd = TimeZoneInfo.ConvertTime(easternEnd, EasternZone, LocalZone);
-
-                return (localStart, localEnd);
-            }
-
-            public static string GetBusinessHoursMessage(DateTime date)
-            {
-                var (localStart, localEnd) = GetBusinessHoursInLocalTime(date);
-                return $"Business hours for {date:d}:\n" +
-                       $"Your time: {localStart:HH:mm} - {localEnd:HH:mm}\n" +
-                       $"Eastern Time: {Start:hh\\:mm} - {End:hh\\:mm}";
-            }
         }
 
         public static string FormatTimeWithZones(DateTime localTime)

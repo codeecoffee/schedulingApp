@@ -5,7 +5,6 @@ namespace schedulingApp
 {
     internal static class Program
     {
-        [STAThread]
         static void Main(string[] args)
         {
             StartApplication();
@@ -15,8 +14,7 @@ namespace schedulingApp
 
         private static void StartApplication()
         {
-            // Your regular application startup code here
-            Console.WriteLine("Application starting...");
+            
 
             // Example: Test database connection
             var dbHelper = new DatabaseHelper();

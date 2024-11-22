@@ -18,12 +18,6 @@ namespace schedulingApp
             InitializeComponent();
             dbHelper = new DatabaseHelper();
             currentAppointmentId = appointmentId;
-            InitializeTimezoneControls();
-
-            bttnSaveChanges.Click += BttnSaveChanges_Click;
-            bttnExit.Click += BttnExit_Click;
-            this.Load += EditAppointments_Load;
-            TimeZoneComboBox.SelectedIndexChanged += TimeZoneComboBox_SelectedIndexChanged;
 
             // Set minimum date for date pickers
             StartDatePicker.Format = DateTimePickerFormat.Custom;
@@ -31,16 +25,23 @@ namespace schedulingApp
             EndDatePicker.Format = DateTimePickerFormat.Custom;
             EndDatePicker.CustomFormat = "MM/dd/yyyy hh:mm tt";
 
-            StartDatePicker.MinDate = new DateTime(2018,1,1,6,0,0);
+            StartDatePicker.MinDate = new DateTime(2018, 1, 1, 6, 0, 0);
             EndDatePicker.MinDate = new DateTime(2018, 1, 1, 6, 0, 0);
 
-            // Handle date validation
+            InitializeForm();
+            InitializeTimezoneControls();
+
+            // Wire up event handlers
+            bttnSaveChanges.Click += BttnSaveChanges_Click;
+            bttnExit.Click += BttnExit_Click;
+            this.Load += EditAppointments_Load;
+            TimeZoneComboBox.SelectedIndexChanged += TimeZoneComboBox_SelectedIndexChanged;
             StartDatePicker.ValueChanged += DatePicker_ValueChanged;
             EndDatePicker.ValueChanged += DatePicker_ValueChanged;
         }
+
         private void InitializeTimezoneControls()
         {
-            // Create timezone combo box
             TimeZoneComboBox = new ComboBox
             {
                 DropDownStyle = ComboBoxStyle.DropDownList,
@@ -49,7 +50,6 @@ namespace schedulingApp
                 Font = new Font("Segoe UI", 9F)
             };
 
-            // Create timezone info label
             TimezoneInfoLabel = new Label
             {
                 AutoSize = true,
@@ -58,18 +58,100 @@ namespace schedulingApp
                 ForeColor = Color.Black
             };
 
-            // Add controls to form
             this.Controls.Add(TimeZoneComboBox);
             this.Controls.Add(TimezoneInfoLabel);
 
-            // Populate timezone combo box
             var timeZones = AppointmentHelper.GetAvailableTimeZones();
             TimeZoneComboBox.DataSource = timeZones;
             TimeZoneComboBox.DisplayMember = "DisplayName";
             TimeZoneComboBox.ValueMember = "Id";
-
-            // Set default to local timezone
             TimeZoneComboBox.SelectedValue = TimeZoneInfo.Local.Id;
+        }
+
+        private void InitializeForm()
+        {
+            // Set up DataGridView
+            AppointmentsDataGridView.AutoGenerateColumns = false;
+            AppointmentsDataGridView.Columns.Clear();
+
+            // Add only the columns we want to display
+            AppointmentsDataGridView.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "customerName",
+                DataPropertyName = "customerName",
+                HeaderText = "Customer"
+            });
+
+            AppointmentsDataGridView.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "title",
+                DataPropertyName = "title",
+                HeaderText = "Title"
+            });
+
+            AppointmentsDataGridView.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "start",
+                DataPropertyName = "start",
+                HeaderText = "Start Time",
+                Width = 200
+            });
+
+            AppointmentsDataGridView.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "end",
+                DataPropertyName = "end",
+                HeaderText = "End Time",
+                Width = 200
+            });
+
+            AppointmentsDataGridView.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "type",
+                DataPropertyName = "type",
+                HeaderText = "Type"
+            });
+
+            // Configure DataGridView for multiline cells
+            AppointmentsDataGridView.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+            AppointmentsDataGridView.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
+            AppointmentsDataGridView.RowTemplate.Height = 40;
+        }
+
+        private void RefreshAppointmentsGrid()
+        {
+            var appointments = dbHelper.GetAllAppointments();
+            if (appointments != null)
+            {
+                DataTable displayTable = new DataTable();
+                displayTable.Columns.Add("customerName", typeof(string));
+                displayTable.Columns.Add("title", typeof(string));
+                displayTable.Columns.Add("start", typeof(string));
+                displayTable.Columns.Add("end", typeof(string));
+                displayTable.Columns.Add("type", typeof(string));
+
+                string selectedTimeZoneId = TimeZoneComboBox.SelectedValue?.ToString() ?? TimeZoneInfo.Local.Id;
+
+                foreach (DataRow row in appointments.Rows)
+                {
+                    DateTime startUtc = ((DateTime)row["start"]).ToUniversalTime();
+                    DateTime endUtc = ((DateTime)row["end"]).ToUniversalTime();
+
+                    var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(selectedTimeZoneId);
+                    DateTime start = TimeZoneInfo.ConvertTimeFromUtc(startUtc, userTimeZone);
+                    DateTime end = TimeZoneInfo.ConvertTimeFromUtc(endUtc, userTimeZone);
+
+                    displayTable.Rows.Add(
+                        row["customerName"],
+                        row["title"],
+                        AppointmentHelper.FormatAppointmentTimeZones(start, selectedTimeZoneId),
+                        AppointmentHelper.FormatAppointmentTimeZones(end, selectedTimeZoneId),
+                        row["type"]
+                    );
+                }
+
+                AppointmentsDataGridView.DataSource = displayTable;
+            }
         }
 
         private void TimeZoneComboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -78,18 +160,15 @@ namespace schedulingApp
 
             try
             {
-                // Update timezone info
                 string selectedTimeZoneId = TimeZoneComboBox.SelectedValue.ToString();
                 TimezoneInfoLabel.Text = AppointmentHelper.GetTimeZoneInfoMessage(selectedTimeZoneId);
 
-                // Adjust appointment times for selected timezone
                 var (adjustedStart, adjustedEnd) = AppointmentHelper.AdjustAppointmentTimesForTimeZone(
                     StartDatePicker.Value,
                     EndDatePicker.Value,
                     TimeZoneInfo.Local.Id,
                     selectedTimeZoneId);
 
-                // Update date pickers (temporarily remove event handlers)
                 StartDatePicker.ValueChanged -= DatePicker_ValueChanged;
                 EndDatePicker.ValueChanged -= DatePicker_ValueChanged;
 
@@ -98,9 +177,11 @@ namespace schedulingApp
                 if (adjustedEnd >= EndDatePicker.MinDate)
                     EndDatePicker.Value = adjustedEnd;
 
-                // Reattach event handlers
                 StartDatePicker.ValueChanged += DatePicker_ValueChanged;
                 EndDatePicker.ValueChanged += DatePicker_ValueChanged;
+
+                // Refresh the grid to show times in the selected timezone
+                RefreshAppointmentsGrid();
             }
             catch (Exception ex)
             {
@@ -108,7 +189,7 @@ namespace schedulingApp
                     "Timezone Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-        
+
         private void EditAppointments_Load(object sender, EventArgs e)
         {
             LoadAppointmentData();
@@ -126,7 +207,6 @@ namespace schedulingApp
                 CustomerComboBox.SelectedValue = currentCustomerId;
             }
         }
-
         private void LoadAppointmentData()
         {
             try
@@ -176,15 +256,6 @@ namespace schedulingApp
             }
         }
 
-        private void RefreshAppointmentsGrid()
-        {
-            var appointments = dbHelper.GetAllAppointments();
-            if (appointments != null)
-            {
-                AppointmentsDataGridView.DataSource = appointments;
-            }
-        }
-
         private void DatePicker_ValueChanged(object sender, EventArgs e)
         {
             // Ensure end date is not before start date
@@ -217,28 +288,6 @@ namespace schedulingApp
             DateTime startUtc = TimeZoneInfo.ConvertTimeToUtc(StartDatePicker.Value);
             DateTime endUtc = TimeZoneInfo.ConvertTimeToUtc(EndDatePicker.Value);
 
-            //TODO!! CHECK THIS 
-            //old
-            //if (dbHelper.HasOverlappingAppointments(
-            //    Convert.ToInt32(CustomerComboBox.SelectedValue),
-            //    startUtc,
-            //    endUtc,
-            //    currentAppointmentId))
-            //    return (false, "This time slot overlaps with another appointment.");
-
-            //new
-            //DataTable existingAppointments = dbHelper.GetAllAppointments();
-            //if (AppointmentHelper.HasOverlappingAppointments(StartDatePicker.Value, EndDatePicker.Value, existingAppointments))
-            //{
-            //    MessageBox.Show(
-            //       "This appointment overlaps with an existing appointment.\n" +
-            //       "Please choose a different time.",
-            //       "Validation Error",
-            //       MessageBoxButtons.OK,
-            //       MessageBoxIcon.Warning);
-            //    return(false, "Rethink your times (and life)");
-
-            //}
 
             return (true, string.Empty);
         }

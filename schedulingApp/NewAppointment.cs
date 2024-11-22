@@ -159,6 +159,9 @@ namespace schedulingApp
             AppointmentsDataGridView.Columns.Add("end", "End Time");
             AppointmentsDataGridView.Columns.Add("type", "Type");
 
+            AppointmentsDataGridView.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+            AppointmentsDataGridView.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
+
             // Set up ComboBox
             CustomerComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
             CustomerComboBox.SelectedIndexChanged += CustomerComboBox_SelectedIndexChanged;
@@ -183,6 +186,37 @@ namespace schedulingApp
             CustomerComboBox.ValueMember = "customerId";
             CustomerComboBox.SelectedIndex = -1;
         }
+        //private void LoadAppointments(int? customerId = null)
+        //{
+        //    DataTable appointments = customerId.HasValue ?
+        //        dbHelper.GetCustomerAppointments(customerId.Value) :
+        //        dbHelper.GetAllAppointments();
+
+        //    AppointmentsDataGridView.Rows.Clear();
+        //    if (appointments != null && appointments.Rows.Count > 0)
+        //    {
+        //        string selectedTimeZoneId = TimeZoneComboBox.SelectedValue?.ToString() ?? TimeZoneInfo.Local.Id;
+
+        //        foreach (DataRow row in appointments.Rows)
+        //        {
+        //            DateTime startUtc = ((DateTime)row["start"]).ToUniversalTime();
+        //            DateTime endUtc = ((DateTime)row["end"]).ToUniversalTime();
+
+        //            var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(selectedTimeZoneId);
+        //            DateTime start = TimeZoneInfo.ConvertTimeFromUtc(startUtc, userTimeZone);
+        //            DateTime end = TimeZoneInfo.ConvertTimeFromUtc(endUtc, userTimeZone);
+
+        //            AppointmentsDataGridView.Rows.Add(
+        //                row["customerName"],
+        //                row["title"],
+        //                AppointmentHelper.FormatAppointmentTimeZones(start, selectedTimeZoneId),
+        //                AppointmentHelper.FormatAppointmentTimeZones(end, selectedTimeZoneId),
+        //                row["type"]
+        //            );
+        //        }
+        //    }
+        //}
+
         private void LoadAppointments(int? customerId = null)
         {
             DataTable appointments = customerId.HasValue ?
@@ -211,6 +245,13 @@ namespace schedulingApp
                         row["type"]
                     );
                 }
+
+                // Adjust column widths
+                AppointmentsDataGridView.Columns["start"].Width = 200;
+                AppointmentsDataGridView.Columns["end"].Width = 200;
+
+                // Set default row height to accommodate two lines
+                AppointmentsDataGridView.RowTemplate.Height = 40;
             }
         }
         private void CustomerComboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -234,40 +275,43 @@ namespace schedulingApp
         {
             try
             {
+                string selectedTimeZoneId = TimeZoneComboBox.SelectedValue.ToString();
+                var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(selectedTimeZoneId);
+                DateTime startTime = DateTime.SpecifyKind(StartDatePicker.Value, DateTimeKind.Local);
+                DateTime endTime = DateTime.SpecifyKind(EndDatePicker.Value, DateTimeKind.Local);
+                DateTime startInUserTz = TimeZoneInfo.ConvertTime(startTime, TimeZoneInfo.Local, userTimeZone);
+                DateTime endInUserTz = TimeZoneInfo.ConvertTime(endTime, TimeZoneInfo.Local, userTimeZone);
+                DateTime startUtc = TimeZoneInfo.ConvertTimeToUtc(startInUserTz, userTimeZone);
+                DateTime endUtc = TimeZoneInfo.ConvertTimeToUtc(endInUserTz, userTimeZone);
+                DateTime startLocal = TimeZoneInfo.ConvertTimeFromUtc(startUtc, TimeZoneInfo.Local);
+                DateTime endLocal = TimeZoneInfo.ConvertTimeFromUtc(endUtc, TimeZoneInfo.Local);
+                DataTable existingAppointments = dbHelper.GetAllAppointments();
+
                 if (!selectedCustomerId.HasValue)
                 {
                     MessageBox.Show("Please select a customer.", "Validation Error",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
-
                 if (string.IsNullOrWhiteSpace(TitleInput.Text))
                 {
                     MessageBox.Show("Title is required.", "Validation Error",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
-
-                string selectedTimeZoneId = TimeZoneComboBox.SelectedValue.ToString();
-                DateTime startTime = StartDatePicker.Value;
-                DateTime endTime = EndDatePicker.Value;
-
+                if (string.IsNullOrWhiteSpace(TypeInput.Text))
+                {
+                    MessageBox.Show("Type is required.", "Validation Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
                 if (endTime <= startTime)
                 {
                     MessageBox.Show("End time must be after start time.", "Validation Error",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
-
-                // Convert times to UTC for business hours check
-                var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(selectedTimeZoneId);
-                DateTime startUtc = TimeZoneInfo.ConvertTimeToUtc(startTime, userTimeZone);
-                DateTime endUtc = TimeZoneInfo.ConvertTimeToUtc(endTime, userTimeZone);
-
-                // Validate business hours
-                if (!AppointmentHelper.IsWithinBusinessHours(
-                    TimeZoneInfo.ConvertTimeFromUtc(startUtc, TimeZoneInfo.Local),
-                    TimeZoneInfo.ConvertTimeFromUtc(endUtc, TimeZoneInfo.Local)))
+                if (!AppointmentHelper.IsWithinBusinessHours(startLocal, endLocal))
                 {
                     var (localStart, localEnd) = AppointmentHelper.GetAdjustedBusinessHours(startTime.Date, selectedTimeZoneId);
                     MessageBox.Show(
@@ -280,9 +324,7 @@ namespace schedulingApp
                         MessageBoxIcon.Warning);
                     return;
                 }
-
-                DataTable existingAppointments = dbHelper.GetAllAppointments();
-                if (AppointmentHelper.HasOverlappingAppointments(startTime, endTime, existingAppointments))
+                if (AppointmentHelper.HasOverlappingAppointments(startLocal, endLocal, existingAppointments))
                 {
                     MessageBox.Show(
                        "This appointment overlaps with an existing appointment.\n" +
@@ -293,7 +335,7 @@ namespace schedulingApp
                     return;
                 }
 
-                // Add appointment (convert to UTC for storage)
+                // Add appointment using UTC times
                 var (success, message) = dbHelper.AddAppointment(
                     selectedCustomerId.Value,
                     1, // Current user ID
