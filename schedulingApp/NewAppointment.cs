@@ -29,9 +29,10 @@ namespace schedulingApp
             timezoneInfoLabel = new Label
             {
                 AutoSize = true,
-                Location = new Point(92, EndDatePicker.Bottom + 20),
+                Location = new Point(375, EndDatePicker.Bottom + 10),
                 Font = new Font("Segoe UI", 9F, FontStyle.Regular),
-                ForeColor = Color.White,
+                ForeColor = Color.Black,
+                BackColor = Color.White,
                 Text = AppointmentHelper.GetTimezoneDifferenceMessage()
             };
             panel1.Controls.Add(timezoneInfoLabel);
@@ -41,9 +42,10 @@ namespace schedulingApp
             businessHoursLabel = new Label
             {
                 AutoSize = true,
-                Location = new Point(92, timezoneInfoLabel.Bottom + 10),
+                Location = new Point(39, TimeZoneComboBox.Bottom + 20),
                 Font = new Font("Segoe UI", 9F, FontStyle.Regular),
-                ForeColor = Color.White,
+                ForeColor = Color.Black,
+                BackColor = Color.White
             };
             panel1.Controls.Add(businessHoursLabel);
 
@@ -59,33 +61,33 @@ namespace schedulingApp
             TimeZoneComboBox = new ComboBox
             {
                 DropDownStyle = ComboBoxStyle.DropDownList,
-                Location = new Point(92, EndDatePicker.Bottom + 20),
+                Location = new Point(39, StartDatePicker.Bottom + 10),
                 Width = 300,
                 Font = new Font("Segoe UI", 9F),
                 ForeColor = Color.Black,
                 BackColor = Color.White
             };
+            panel1.Controls.Add(TimeZoneComboBox);
 
             // Add timezone info label
-            timezoneInfoLabel = new Label
-            {
-                AutoSize = true,
-                Location = new Point(92, TimeZoneComboBox.Bottom + 10),
-                Font = new Font("Segoe UI", 9F, FontStyle.Regular),
-                ForeColor = Color.White,
-            };
+            //timezoneInfoLabel = new Label
+            //{
+            //    AutoSize = true,
+            //    Location = new Point(92, TimeZoneComboBox.Bottom + 10),
+            //    Font = new Font("Segoe UI", 9F, FontStyle.Regular),
+            //    ForeColor = Color.White,
+            //};
 
             // Add controls to panel
-            panel1.Controls.Add(TimeZoneComboBox);
-            panel1.Controls.Add(timezoneInfoLabel);
+            //panel1.Controls.Add(timezoneInfoLabel);
 
-            // Populate timezone combo box
+            
             var timeZones = AppointmentHelper.GetAvailableTimeZones();
             TimeZoneComboBox.DataSource = timeZones;
             TimeZoneComboBox.DisplayMember = "DisplayName";
             TimeZoneComboBox.ValueMember = "Id";
 
-            // Set default to local timezone
+           
             TimeZoneComboBox.SelectedValue = TimeZoneInfo.Local.Id;
 
             // Add event handler
@@ -100,15 +102,24 @@ namespace schedulingApp
             {
                 UpdateTimezoneInfo();
 
-                // Adjust appointment times for selected timezone
+                
                 string selectedTimeZoneId = TimeZoneComboBox.SelectedValue.ToString();
-                var (adjustedStart, adjustedEnd) = AppointmentHelper.AdjustAppointmentTimesForTimeZone(
-                    StartDatePicker.Value,
-                    EndDatePicker.Value,
-                    TimeZoneInfo.Local.Id,
-                    selectedTimeZoneId);
+                var selectedTimeZone = TimeZoneInfo.FindSystemTimeZoneById(selectedTimeZoneId);
+                var localTimeZone = TimeZoneInfo.Local;
 
-                // Update date pickers (temporarily remove event handlers)
+                
+                DateTime localStartTime = DateTime.SpecifyKind(StartDatePicker.Value, DateTimeKind.Local);
+                DateTime localEndTime = DateTime.SpecifyKind(EndDatePicker.Value, DateTimeKind.Local);
+
+               
+                DateTime startUtc = TimeZoneInfo.ConvertTimeToUtc(localStartTime, localTimeZone);
+                DateTime endUtc = TimeZoneInfo.ConvertTimeToUtc(localEndTime, localTimeZone);
+
+                
+                DateTime adjustedStart = TimeZoneInfo.ConvertTimeFromUtc(startUtc, selectedTimeZone);
+                DateTime adjustedEnd = TimeZoneInfo.ConvertTimeFromUtc(endUtc, selectedTimeZone);
+
+               
                 StartDatePicker.ValueChanged -= DatePicker_ValueChanged;
                 EndDatePicker.ValueChanged -= DatePicker_ValueChanged;
 
@@ -127,7 +138,6 @@ namespace schedulingApp
                     "Timezone Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
         private void UpdateTimezoneInfo()
         {
             if (TimeZoneComboBox.SelectedValue == null) return;
@@ -186,37 +196,7 @@ namespace schedulingApp
             CustomerComboBox.ValueMember = "customerId";
             CustomerComboBox.SelectedIndex = -1;
         }
-        //private void LoadAppointments(int? customerId = null)
-        //{
-        //    DataTable appointments = customerId.HasValue ?
-        //        dbHelper.GetCustomerAppointments(customerId.Value) :
-        //        dbHelper.GetAllAppointments();
-
-        //    AppointmentsDataGridView.Rows.Clear();
-        //    if (appointments != null && appointments.Rows.Count > 0)
-        //    {
-        //        string selectedTimeZoneId = TimeZoneComboBox.SelectedValue?.ToString() ?? TimeZoneInfo.Local.Id;
-
-        //        foreach (DataRow row in appointments.Rows)
-        //        {
-        //            DateTime startUtc = ((DateTime)row["start"]).ToUniversalTime();
-        //            DateTime endUtc = ((DateTime)row["end"]).ToUniversalTime();
-
-        //            var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(selectedTimeZoneId);
-        //            DateTime start = TimeZoneInfo.ConvertTimeFromUtc(startUtc, userTimeZone);
-        //            DateTime end = TimeZoneInfo.ConvertTimeFromUtc(endUtc, userTimeZone);
-
-        //            AppointmentsDataGridView.Rows.Add(
-        //                row["customerName"],
-        //                row["title"],
-        //                AppointmentHelper.FormatAppointmentTimeZones(start, selectedTimeZoneId),
-        //                AppointmentHelper.FormatAppointmentTimeZones(end, selectedTimeZoneId),
-        //                row["type"]
-        //            );
-        //        }
-        //    }
-        //}
-
+      
         private void LoadAppointments(int? customerId = null)
         {
             DataTable appointments = customerId.HasValue ?

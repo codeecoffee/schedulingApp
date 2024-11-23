@@ -18,6 +18,7 @@ namespace schedulingApp
         private DateTime currentMonth;  // Remove the initialization here
         private DateTime? selectedDate = null;
         private Button bttnReports;
+        private NewCustomerForm currentNewCustomerForm;
 
         private readonly DataGridView calendarGrid;
         private readonly Button prevMonthBtn;
@@ -374,9 +375,6 @@ namespace schedulingApp
             }
         }
 
-
-
-
         private void bttnReports_Click(object sender, EventArgs e)
         {
             ContextMenuStrip reportsMenu = new ContextMenuStrip();
@@ -588,7 +586,7 @@ namespace schedulingApp
             }
         }
 
-        // ShowReportDialog method include export option
+       
         private void ShowReportDialog(string title, string report)
         {
             Form reportForm = new Form
@@ -968,17 +966,27 @@ namespace schedulingApp
 
         private void bttnNewCustomer_Click(object sender, EventArgs e)
         {
-
-            NewCustomerForm newCustomerForm = new NewCustomerForm();
-            newCustomerForm.FormClosed += (s, args) =>
+            currentNewCustomerForm = new NewCustomerForm();
+            currentNewCustomerForm.FormClosed += (s, args) =>
             {
                 this.Show();
-                // Refresh any necessary data
+                currentNewCustomerForm = null;  
                 DisplayCalendarGrid();
                 UpdateAppointmentList();
             };
-            newCustomerForm.Show();
+            currentNewCustomerForm.Show();
             this.Hide();
+
+            //NewCustomerForm newCustomerForm = new NewCustomerForm();
+            //newCustomerForm.FormClosed += (s, args) =>
+            //{
+            //    this.Show();
+            //    // Refresh any necessary data
+            //    DisplayCalendarGrid();
+            //    UpdateAppointmentList();
+            //};
+            //newCustomerForm.Show();
+            //this.Hide();
         }
 
         private void bttnEditCustomer_Click(object sender, EventArgs e)

@@ -86,13 +86,13 @@
             panel1.Location = new Point(0, 0);
             panel1.Margin = new Padding(3, 2, 3, 2);
             panel1.Name = "panel1";
-            panel1.Size = new Size(1242, 678);
+            panel1.Size = new Size(1200, 585);
             panel1.TabIndex = 1;
             // 
             // labelCurrentAppointments
             // 
             labelCurrentAppointments.AutoSize = true;
-            labelCurrentAppointments.Location = new Point(613, 130);
+            labelCurrentAppointments.Location = new Point(35, 112);
             labelCurrentAppointments.Name = "labelCurrentAppointments";
             labelCurrentAppointments.Size = new Size(126, 15);
             labelCurrentAppointments.TabIndex = 44;
@@ -101,8 +101,8 @@
             // CustomerComboBox
             // 
             CustomerComboBox.FormattingEnabled = true;
-            CustomerComboBox.Location = new Point(60, 594);
-            CustomerComboBox.Margin = new Padding(2, 2, 2, 2);
+            CustomerComboBox.Location = new Point(673, 460);
+            CustomerComboBox.Margin = new Padding(2);
             CustomerComboBox.Name = "CustomerComboBox";
             CustomerComboBox.Size = new Size(434, 23);
             CustomerComboBox.TabIndex = 43;
@@ -110,7 +110,7 @@
             // labelCustomer
             // 
             labelCustomer.AutoSize = true;
-            labelCustomer.Location = new Point(60, 566);
+            labelCustomer.Location = new Point(673, 432);
             labelCustomer.Name = "labelCustomer";
             labelCustomer.Size = new Size(59, 15);
             labelCustomer.TabIndex = 42;
@@ -118,8 +118,8 @@
             // 
             // EndDatePicker
             // 
-            EndDatePicker.Location = new Point(286, 524);
-            EndDatePicker.Margin = new Padding(2, 2, 2, 2);
+            EndDatePicker.Location = new Point(375, 430);
+            EndDatePicker.Margin = new Padding(2);
             EndDatePicker.MaxDate = new DateTime(2029, 12, 31, 0, 0, 0, 0);
             EndDatePicker.MinDate = new DateTime(2024, 11, 4, 0, 0, 0, 0);
             EndDatePicker.Name = "EndDatePicker";
@@ -128,16 +128,16 @@
             // 
             // StartDatePicker
             // 
-            StartDatePicker.Location = new Point(59, 524);
-            StartDatePicker.Margin = new Padding(2, 2, 2, 2);
+            StartDatePicker.Location = new Point(39, 430);
+            StartDatePicker.Margin = new Padding(2);
             StartDatePicker.Name = "StartDatePicker";
             StartDatePicker.Size = new Size(204, 23);
             StartDatePicker.TabIndex = 39;
             // 
             // DescriptionInput
             // 
-            DescriptionInput.Location = new Point(59, 210);
-            DescriptionInput.Margin = new Padding(2, 2, 2, 2);
+            DescriptionInput.Location = new Point(672, 201);
+            DescriptionInput.Margin = new Padding(2);
             DescriptionInput.Name = "DescriptionInput";
             DescriptionInput.Size = new Size(432, 92);
             DescriptionInput.TabIndex = 38;
@@ -146,7 +146,7 @@
             // labelEndDate
             // 
             labelEndDate.AutoSize = true;
-            labelEndDate.Location = new Point(293, 491);
+            labelEndDate.Location = new Point(375, 410);
             labelEndDate.Name = "labelEndDate";
             labelEndDate.Size = new Size(54, 15);
             labelEndDate.TabIndex = 37;
@@ -155,7 +155,7 @@
             // labelType
             // 
             labelType.AutoSize = true;
-            labelType.Location = new Point(299, 374);
+            labelType.Location = new Point(913, 314);
             labelType.Name = "labelType";
             labelType.Size = new Size(31, 15);
             labelType.TabIndex = 35;
@@ -163,7 +163,7 @@
             // 
             // TypeInput
             // 
-            TypeInput.Location = new Point(299, 392);
+            TypeInput.Location = new Point(913, 332);
             TypeInput.Name = "TypeInput";
             TypeInput.Size = new Size(196, 23);
             TypeInput.TabIndex = 34;
@@ -171,7 +171,7 @@
             // labelUrl
             // 
             labelUrl.AutoSize = true;
-            labelUrl.Location = new Point(59, 436);
+            labelUrl.Location = new Point(673, 376);
             labelUrl.Name = "labelUrl";
             labelUrl.Size = new Size(28, 15);
             labelUrl.TabIndex = 33;
@@ -183,7 +183,7 @@
             bttnExit.Cursor = Cursors.Hand;
             bttnExit.FlatStyle = FlatStyle.Flat;
             bttnExit.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            bttnExit.Location = new Point(1110, 628);
+            bttnExit.Location = new Point(1034, 553);
             bttnExit.Name = "bttnExit";
             bttnExit.Size = new Size(75, 27);
             bttnExit.TabIndex = 17;
@@ -192,7 +192,7 @@
             // 
             // URLInput
             // 
-            URLInput.Location = new Point(59, 454);
+            URLInput.Location = new Point(673, 394);
             URLInput.Name = "URLInput";
             URLInput.Size = new Size(435, 23);
             URLInput.TabIndex = 32;
@@ -203,7 +203,7 @@
             bttnCreate.Cursor = Cursors.Hand;
             bttnCreate.FlatStyle = FlatStyle.Flat;
             bttnCreate.Font = new Font("Microsoft Sans Serif", 12F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 0);
-            bttnCreate.Location = new Point(51, 628);
+            bttnCreate.Location = new Point(673, 498);
             bttnCreate.Name = "bttnCreate";
             bttnCreate.Size = new Size(442, 35);
             bttnCreate.TabIndex = 16;
@@ -213,7 +213,7 @@
             // labelContact
             // 
             labelContact.AutoSize = true;
-            labelContact.Location = new Point(59, 374);
+            labelContact.Location = new Point(673, 314);
             labelContact.Name = "labelContact";
             labelContact.Size = new Size(49, 15);
             labelContact.TabIndex = 31;
@@ -233,7 +233,7 @@
             // 
             // ContactInput
             // 
-            ContactInput.Location = new Point(59, 392);
+            ContactInput.Location = new Point(673, 332);
             ContactInput.Name = "ContactInput";
             ContactInput.Size = new Size(225, 23);
             ContactInput.TabIndex = 30;
@@ -241,17 +241,17 @@
             // AppointmentsDataGridView
             // 
             AppointmentsDataGridView.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            AppointmentsDataGridView.Location = new Point(613, 145);
+            AppointmentsDataGridView.Location = new Point(35, 127);
             AppointmentsDataGridView.Margin = new Padding(3, 2, 3, 2);
             AppointmentsDataGridView.Name = "AppointmentsDataGridView";
             AppointmentsDataGridView.RowHeadersWidth = 51;
-            AppointmentsDataGridView.Size = new Size(572, 469);
+            AppointmentsDataGridView.Size = new Size(582, 217);
             AppointmentsDataGridView.TabIndex = 0;
             // 
             // labelLocation
             // 
             labelLocation.AutoSize = true;
-            labelLocation.Location = new Point(59, 322);
+            labelLocation.Location = new Point(39, 358);
             labelLocation.Name = "labelLocation";
             labelLocation.Size = new Size(53, 15);
             labelLocation.TabIndex = 29;
@@ -260,7 +260,7 @@
             // labelFieldTitle
             // 
             labelFieldTitle.AutoSize = true;
-            labelFieldTitle.Location = new Point(59, 130);
+            labelFieldTitle.Location = new Point(672, 121);
             labelFieldTitle.Name = "labelFieldTitle";
             labelFieldTitle.Size = new Size(29, 15);
             labelFieldTitle.TabIndex = 23;
@@ -268,14 +268,14 @@
             // 
             // LocationInput
             // 
-            LocationInput.Location = new Point(59, 340);
+            LocationInput.Location = new Point(39, 374);
             LocationInput.Name = "LocationInput";
             LocationInput.Size = new Size(435, 23);
             LocationInput.TabIndex = 28;
             // 
             // TitleInput
             // 
-            TitleInput.Location = new Point(59, 148);
+            TitleInput.Location = new Point(672, 139);
             TitleInput.Name = "TitleInput";
             TitleInput.Size = new Size(435, 23);
             TitleInput.TabIndex = 22;
@@ -283,7 +283,7 @@
             // labelStartDate
             // 
             labelStartDate.AutoSize = true;
-            labelStartDate.Location = new Point(59, 491);
+            labelStartDate.Location = new Point(39, 410);
             labelStartDate.Name = "labelStartDate";
             labelStartDate.Size = new Size(58, 15);
             labelStartDate.TabIndex = 27;
@@ -292,7 +292,7 @@
             // labelDescription
             // 
             labelDescription.AutoSize = true;
-            labelDescription.Location = new Point(59, 182);
+            labelDescription.Location = new Point(672, 173);
             labelDescription.Name = "labelDescription";
             labelDescription.Size = new Size(67, 15);
             labelDescription.TabIndex = 25;
@@ -303,10 +303,10 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            ClientSize = new Size(1242, 678);
+            ClientSize = new Size(1200, 585);
             Controls.Add(panel1);
             FormBorderStyle = FormBorderStyle.None;
-            Margin = new Padding(2, 2, 2, 2);
+            Margin = new Padding(2);
             Name = "NewAppointment";
             Text = "NewAppointment";
             panel1.ResumeLayout(false);
