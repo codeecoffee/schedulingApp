@@ -21,7 +21,7 @@ namespace schedulingApp
             dbHelper = new DatabaseHelper();
             LoadCustomers();
 
-            // Set up the DataGridView
+           
             customersDataGridView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             customersDataGridView.MultiSelect = false;
             customersDataGridView.ReadOnly = true;
@@ -103,7 +103,7 @@ namespace schedulingApp
         {
             if (currentCustomerId == -1)
             { MessageBox.Show("Please select a customer to modify.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
-            // Get values from form controls and trim them
+           
             string customerName = CustomerNameInput.Text.Trim();
             string address = CustomerAddressInput.Text.Trim();
             string address2 = CustomerAddress2Input.Text.Trim();
@@ -112,7 +112,7 @@ namespace schedulingApp
             string postalCode = CustomerPostalCodeInput.Text.Trim();
             string phoneNumber = CustomerPhoneInput.Text.Trim();
 
-            // Validate all customer input
+            
             var (isValid, validationMessage) = ValidationHelper.ValidateCustomerInput(
                 customerName,
                 address,

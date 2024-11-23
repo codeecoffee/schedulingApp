@@ -44,10 +44,10 @@ namespace schedulingApp
             {
                 var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
 
-                // Set up the current time properly
+               
                 DateTime now = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Local);
 
-                // Convert to UTC first, then to desired timezone
+                // Convert to UTC first, then to EST
                 DateTime utcNow = TimeZoneInfo.ConvertTimeToUtc(now);
                 DateTime userTime = TimeZoneInfo.ConvertTimeFromUtc(utcNow, userTimeZone);
                 DateTime easternTime = TimeZoneInfo.ConvertTimeFromUtc(utcNow, EasternZone);
@@ -59,7 +59,7 @@ namespace schedulingApp
                 bool userIsDst = userTimeZone.IsDaylightSavingTime(userTime);
                 bool easternIsDst = EasternZone.IsDaylightSavingTime(easternTime);
 
-                // Get business hours using UTC time
+                
                 var (businessStart, businessEnd) = GetAdjustedBusinessHours(
                     TimeZoneInfo.ConvertTimeFromUtc(utcNow, userTimeZone),
                     timeZoneId);
@@ -146,7 +146,7 @@ namespace schedulingApp
             if (timeZone.Id.Contains("Hawaii"))
                 return "HST";
 
-            // For other timezones, use UTC offset
+            // other timezones, use UTC offset
             var offset = timeZone.GetUtcOffset(DateTime.Now);
             return $"UTC{(offset.Hours >= 0 ? "+" : "")}{offset.Hours}";
         }
@@ -203,7 +203,7 @@ namespace schedulingApp
             if (existingAppointments == null || existingAppointments.Rows.Count == 0)
                 return false;
 
-            // Convert new appointment times to UTC for comparison
+           
             DateTime newStartUtc = TimeZoneInfo.ConvertTimeToUtc(newStartTime, LocalZone);
             DateTime newEndUtc = TimeZoneInfo.ConvertTimeToUtc(newEndTime, LocalZone);
 
@@ -220,27 +220,7 @@ namespace schedulingApp
             }
 
             return false;
-        }
-
-        //public static string FormatAppointmentTimeZones(DateTime appointmentTime, string userTimeZoneId)
-        //{
-        //    try
-        //    {
-        //        var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(userTimeZoneId);
-        //        DateTime userTime = TimeZoneInfo.ConvertTime(appointmentTime, LocalZone, userTimeZone);
-        //        DateTime easternTime = TimeZoneInfo.ConvertTime(appointmentTime, LocalZone, EasternZone);
-        //        DateTime utcTime = TimeZoneInfo.ConvertTimeToUtc(appointmentTime, LocalZone);
-
-        //        return $"Your Time ({userTimeZone.StandardName}): {userTime:g}\n" +
-        //               $"Eastern Time (ET): {easternTime:g}\n" +
-        //               $"UTC: {utcTime:g}";
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw new Exception($"Error formatting appointment times: {ex.Message}");
-        //    }
-        //}
-        
+        }    
         public static DateTime AdjustAppointmentTimeForTimeZone(DateTime appointmentTime, TimeZoneInfo sourceTimeZone, TimeZoneInfo targetTimeZone)
         {
             return TimeZoneInfo.ConvertTime(appointmentTime, sourceTimeZone, targetTimeZone);

@@ -22,9 +22,17 @@ namespace schedulingApp
             helper = new Helper();
             dbHelper = new DatabaseHelper();
 
+            // Verify file access on form load
+            SimpleFileLogger.VerifyFileAccess();
 
-
-               
+            // Add a test button for direct testing
+            Button testLogButton = new Button
+            {
+                Text = "Test Log",
+                Location = new Point(bttnExit.Left, bttnExit.Top - 50),
+                Size = new Size(86, 36),
+                BackColor = Color.Orange
+            };
 
             Label locationLabel = new Label
             {
@@ -35,7 +43,7 @@ namespace schedulingApp
             this.Controls.Add(locationLabel);
             try
             {
-               
+
                 if (dbHelper.TestConnection())
                 {
                     Console.WriteLine("Database connection successful!");
@@ -55,7 +63,175 @@ namespace schedulingApp
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
+        
+
+        testLogButton.Click += (s, e) => SimpleFileLogger.LogLogin("TEST_USER");
+            this.Controls.Add(testLogButton);
         }
+        private void bttnLogin_Click(object sender, EventArgs e)
+        {
+            string username = usernameInput.Text;
+            string password = passwordInput.Text;
+
+            // Validate input
+            var (isValid, message) = ValidationHelper.ValidateLoginInput(username, password);
+            if (!isValid)
+            {
+                MessageBox.Show(
+                    helper.TranslateMessage(message),
+                    helper.TranslateMessage("ValidationError"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (dbHelper.ValidateUser(username, password))
+            {
+                // Log the login - using new simple logger
+                SimpleFileLogger.LogLogin(username);
+
+                dbHelper.LogLoginAttempt(username, true);
+                CheckUpcomingAppointments(username);
+
+                MessageBox.Show(
+                    helper.TranslateMessage("LoginSuccessful"),
+                    "",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
+                DatabaseHelper.SetCurrentUser(username);
+                MainForm mainForm = new MainForm(username);
+                mainForm.Show();
+                this.Hide();
+            }
+            else
+            {
+                dbHelper.LogLoginAttempt(username, false);
+                MessageBox.Show(
+                    helper.TranslateMessage("LoginFailed"),
+                    helper.TranslateMessage("ValidationError"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+
+
+
+
+
+
+        //}
+        //private void bttnLogin_Click(object sender, EventArgs e)
+        //{
+        //    string username = usernameInput.Text;
+        //    string password = passwordInput.Text;
+
+        //    // Validate input
+        //    var (isValid, message) = ValidationHelper.ValidateLoginInput(username, password);
+        //    if (!isValid)
+        //    {
+        //        MessageBox.Show(
+        //            helper.TranslateMessage(message),
+        //            helper.TranslateMessage("ValidationError"),
+        //            MessageBoxButtons.OK,
+        //            MessageBoxIcon.Warning);
+        //        return;
+        //    }
+
+        //    if (dbHelper.ValidateUser(username, password))
+        //    {
+        //        try
+        //        {
+        //            // Attempt to log the login
+        //            LoginLogger.Log(username);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            MessageBox.Show($"Login successful but logging failed: {ex.Message}");
+        //        }
+
+        //        dbHelper.LogLoginAttempt(username, true);
+        //        CheckUpcomingAppointments(username);
+
+        //        MessageBox.Show(
+        //            helper.TranslateMessage("LoginSuccessful"),
+        //            "",
+        //            MessageBoxButtons.OK,
+        //            MessageBoxIcon.Information);
+
+        //        DatabaseHelper.SetCurrentUser(username);
+        //        MainForm mainForm = new MainForm(username);
+        //        mainForm.Show();
+        //        this.Hide();
+        //    }
+        //    else
+        //    {
+        //        dbHelper.LogLoginAttempt(username, false);
+        //        MessageBox.Show(
+        //            helper.TranslateMessage("LoginFailed"),
+        //            helper.TranslateMessage("ValidationError"),
+        //            MessageBoxButtons.OK,
+        //            MessageBoxIcon.Error);
+        //    }
+        //}
+
+        //private void bttnLogin_Click(object sender, EventArgs e)
+        //{
+        //    string username = usernameInput.Text;
+        //    string password = passwordInput.Text;
+
+        //    // Validate input
+        //    var (isValid, message) = ValidationHelper.ValidateLoginInput(username, password);
+        //    if (!isValid)
+        //    {
+        //        MessageBox.Show(
+        //            helper.TranslateMessage(message),
+        //            helper.TranslateMessage("ValidationError"),
+        //            MessageBoxButtons.OK,
+        //            MessageBoxIcon.Warning);
+        //        ShowLogFile();
+        //        return;
+        //    }
+
+        //    if (dbHelper.ValidateUser(username, password))
+        //    {
+        //        dbHelper.LogLoginAttempt(username, true);
+
+        //        // Log successful login
+        //        LoginLogger.LogUserLogin(username, true);
+
+        //        // Check for upcoming appointments
+        //        CheckUpcomingAppointments(username);
+
+        //        // Show success message
+        //        MessageBox.Show(
+        //            helper.TranslateMessage("LoginSuccessful"),
+        //            "",
+        //            MessageBoxButtons.OK,
+        //            MessageBoxIcon.Information);
+
+        //        DatabaseHelper.SetCurrentUser(username);
+
+        //        // Open main form
+        //        MainForm mainForm = new MainForm(username);
+        //        mainForm.Show();
+        //        this.Hide();
+        //    }
+        //    else
+        //    {
+        //        dbHelper.LogLoginAttempt(username, false);
+
+        //        // Log failed login
+        //        LoginLogger.LogUserLogin(username, false);
+
+        //        MessageBox.Show(
+        //            helper.TranslateMessage("LoginFailed"),
+        //            helper.TranslateMessage("ValidationError"),
+        //            MessageBoxButtons.OK,
+        //            MessageBoxIcon.Error);
+        //    }
+        //}
 
         private void CheckUpcomingAppointments(string username)
         {
@@ -86,56 +262,8 @@ namespace schedulingApp
                 }
             }
         }
+        
 
-        private void bttnLogin_Click(object sender, EventArgs e)
-        {
-            string username = usernameInput.Text;
-            string password = passwordInput.Text;
-
-            // Validate input
-            var (isValid, message) = ValidationHelper.ValidateLoginInput(username, password);
-            if (!isValid)
-            {
-                MessageBox.Show(
-                    helper.TranslateMessage(message),
-                    helper.TranslateMessage("ValidationError"),
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-                return;
-            }
-
-            if (dbHelper.ValidateUser(username, password))
-            {
-                dbHelper.LogLoginAttempt(username, true);
-
-                // Check for upcoming appointments
-                CheckUpcomingAppointments(username);
-
-                // Show success message
-                MessageBox.Show(
-                    helper.TranslateMessage("LoginSuccessful"),
-                    "",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
-                
-                //Log the login attempt to the file 
-                LogLogin(username);
-                DatabaseHelper.SetCurrentUser(username);
-                // Open main form
-                MainForm mainForm = new MainForm(username);
-                mainForm.Show();
-                this.Hide();
-            }
-            else
-            {
-                dbHelper.LogLoginAttempt(username, false);
-                MessageBox.Show(
-                    helper.TranslateMessage("LoginFailed"),
-                    helper.TranslateMessage("ValidationError"),
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
-        }
         private void bttnRegister_Click(object sender, EventArgs e)
         {
             this.Hide();
@@ -153,39 +281,9 @@ namespace schedulingApp
 
             if (result == DialogResult.Yes)
             {
-                
+
                 Application.Exit();
             }
-        }
-        private void LogLogin(string username)
-        {
-            string filePath = Path.Combine(Application.StartupPath, "Login_History.txt");
-            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            //MessageBox.Show("[Func Loglogin] You hit the function to log shit");
-
-            // Append the username and timestamp to the text file
-            try
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
-
-                // Write to file
-                using (StreamWriter writer = new StreamWriter(filePath, true))
-                {
-                    writer.WriteLine($"{timestamp}: {username} logged in.");
-                    writer.Flush(); // Ensure content is written immediately
-                    //MessageBox.Show("[Func Loglogin] Function executed");
-
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to log the login: {ex.Message}\nFile path: {filePath}");
-            }
-        }
-
-        private void labelUsername_Click(object sender, EventArgs e)
-        {
-
         }
     }
 }

@@ -83,7 +83,7 @@ namespace schedulingApp
             labelUsername.Size = new Size(75, 20);
             labelUsername.TabIndex = 3;
             labelUsername.Text = "Username";
-            labelUsername.Click += labelUsername_Click;
+            //labelUsername.Click += labelUsername_Click;
             // 
             // bttnRegister
             // 

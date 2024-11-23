@@ -44,7 +44,6 @@ namespace schedulingApp
             }
         }
         
-        //Calls the does the comparison to the DB Customers and calls the initialization
         public void SetupDatabase()
         {
             var customers = GetAllCustomers();
@@ -191,7 +190,6 @@ namespace schedulingApp
             }
         }
 
-        //!!TODO: FIX THIS 
         public void LogLoginAttempt(string username, bool success)
         {
             try
