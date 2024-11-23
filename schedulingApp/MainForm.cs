@@ -248,7 +248,7 @@ namespace schedulingApp
 
                             if (appointmentCounts.ContainsKey(currentDate))
                             {
-                                cellText += $"\n({appointmentCounts[currentDate]} appointments)";
+                                cellText += $"\n({appointmentCounts[currentDate]} appt)";
                                 cell.Style.BackColor = Color.LightGreen;
                             }
 

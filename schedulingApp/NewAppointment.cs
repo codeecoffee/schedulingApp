@@ -68,6 +68,10 @@ namespace schedulingApp
                 BackColor = Color.White
             };
             panel1.Controls.Add(TimeZoneComboBox);
+            
+
+            //panel1.Controls.Remove(TimeZoneComboBox);
+
 
             // Add timezone info label
             //timezoneInfoLabel = new Label
@@ -81,7 +85,7 @@ namespace schedulingApp
             // Add controls to panel
             //panel1.Controls.Add(timezoneInfoLabel);
 
-            
+
             var timeZones = AppointmentHelper.GetAvailableTimeZones();
             TimeZoneComboBox.DataSource = timeZones;
             TimeZoneComboBox.DisplayMember = "DisplayName";
@@ -188,15 +192,70 @@ namespace schedulingApp
         //    businessHoursLabel.Text = AppointmentHelper.BusinessHours.GetBusinessHoursMessage(StartDatePicker.Value);
         //}
 
+        //private void LoadCustomers()
+        //{
+        //    DataTable customers = dbHelper.GetAllCustomers();
+        //    CustomerComboBox.DataSource = customers;
+        //    CustomerComboBox.DisplayMember = "customerName";
+        //    CustomerComboBox.ValueMember = "customerId";
+        //    CustomerComboBox.SelectedIndex = -1;
+        //}
+        private void CustomerComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (CustomerComboBox.SelectedValue == DBNull.Value || CustomerComboBox.SelectedValue == null)
+            {
+                selectedCustomerId = null;
+                LoadAppointments(); // Load all appointments
+            }
+            else
+            {
+                DataRowView drv = (DataRowView)CustomerComboBox.SelectedItem;
+                if (drv["customerId"] != DBNull.Value)
+                {
+                    selectedCustomerId = Convert.ToInt32(drv["customerId"]);
+                    LoadAppointments(selectedCustomerId);
+                }
+                else
+                {
+                    selectedCustomerId = null;
+                    LoadAppointments();
+                }
+            }
+        }
+
         private void LoadCustomers()
         {
             DataTable customers = dbHelper.GetAllCustomers();
-            CustomerComboBox.DataSource = customers;
+
+            // Create a new DataTable with the same schema
+            DataTable customersWithAll = new DataTable();
+            customersWithAll.Columns.Add("customerId", typeof(int));
+            customersWithAll.Columns.Add("customerName", typeof(string));
+
+            // Add empty option for showing all appointments
+            DataRow allCustomersRow = customersWithAll.NewRow();
+            allCustomersRow["customerId"] = DBNull.Value;
+            allCustomersRow["customerName"] = "-- All Customers --";
+            customersWithAll.Rows.Add(allCustomersRow);
+
+            // Add all existing customers
+            foreach (DataRow row in customers.Rows)
+            {
+                DataRow newRow = customersWithAll.NewRow();
+                newRow["customerId"] = row["customerId"];
+                newRow["customerName"] = row["customerName"];
+                customersWithAll.Rows.Add(newRow);
+            }
+
+            CustomerComboBox.DataSource = customersWithAll;
             CustomerComboBox.DisplayMember = "customerName";
             CustomerComboBox.ValueMember = "customerId";
-            CustomerComboBox.SelectedIndex = -1;
+            CustomerComboBox.SelectedIndex = 0; // Select "All Customers" by default
         }
-      
+        
+        
+        
+        
         private void LoadAppointments(int? customerId = null)
         {
             DataTable appointments = customerId.HasValue ?
@@ -207,50 +266,138 @@ namespace schedulingApp
             if (appointments != null && appointments.Rows.Count > 0)
             {
                 string selectedTimeZoneId = TimeZoneComboBox.SelectedValue?.ToString() ?? TimeZoneInfo.Local.Id;
+                var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(selectedTimeZoneId);
+                var estTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 
                 foreach (DataRow row in appointments.Rows)
                 {
-                    DateTime startUtc = ((DateTime)row["start"]).ToUniversalTime();
-                    DateTime endUtc = ((DateTime)row["end"]).ToUniversalTime();
+                    // Ensure we're working with UTC times from the database
+                    DateTime startUtc = DateTime.SpecifyKind(Convert.ToDateTime(row["start"]), DateTimeKind.Utc);
+                    DateTime endUtc = DateTime.SpecifyKind(Convert.ToDateTime(row["end"]), DateTimeKind.Utc);
 
-                    var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(selectedTimeZoneId);
-                    DateTime start = TimeZoneInfo.ConvertTimeFromUtc(startUtc, userTimeZone);
-                    DateTime end = TimeZoneInfo.ConvertTimeFromUtc(endUtc, userTimeZone);
+                    // Convert to EST
+                    DateTime startEst = TimeZoneInfo.ConvertTimeFromUtc(startUtc, estTimeZone);
+                    DateTime endEst = TimeZoneInfo.ConvertTimeFromUtc(endUtc, estTimeZone);
+
+                    // Convert to user's local timezone
+                    DateTime startLocal = TimeZoneInfo.ConvertTimeFromUtc(startUtc, userTimeZone);
+                    DateTime endLocal = TimeZoneInfo.ConvertTimeFromUtc(endUtc, userTimeZone);
+
+                    // Format the display string to show both timezones
+                    string startDisplay = FormatTimeWithBothZones(startEst, startLocal, estTimeZone, userTimeZone);
+                    string endDisplay = FormatTimeWithBothZones(endEst, endLocal, estTimeZone, userTimeZone);
 
                     AppointmentsDataGridView.Rows.Add(
                         row["customerName"],
                         row["title"],
-                        AppointmentHelper.FormatAppointmentTimeZones(start, selectedTimeZoneId),
-                        AppointmentHelper.FormatAppointmentTimeZones(end, selectedTimeZoneId),
+                        startDisplay,
+                        endDisplay,
                         row["type"]
                     );
                 }
 
-                // Adjust column widths
-                AppointmentsDataGridView.Columns["start"].Width = 200;
-                AppointmentsDataGridView.Columns["end"].Width = 200;
+                // Adjust column widths to accommodate the longer text
+                AppointmentsDataGridView.Columns["start"].Width = 250;
+                AppointmentsDataGridView.Columns["end"].Width = 250;
 
-                // Set default row height to accommodate two lines
-                AppointmentsDataGridView.RowTemplate.Height = 40;
+                // Increase row height to accommodate multiple lines
+                AppointmentsDataGridView.RowTemplate.Height = 50;
+                AppointmentsDataGridView.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
             }
         }
-        private void CustomerComboBox_SelectedIndexChanged(object sender, EventArgs e)
+
+        // Helper method to format time display with both zones
+        private string FormatTimeWithBothZones(DateTime estTime, DateTime localTime, TimeZoneInfo estZone, TimeZoneInfo localZone)
         {
-            if (CustomerComboBox.SelectedValue != null)
-            {
-                DataRowView drv = (DataRowView)CustomerComboBox.SelectedItem;
-                selectedCustomerId = Convert.ToInt32(drv["customerId"]); 
-                LoadAppointments(selectedCustomerId);
+            string estAbbrev = GetTimeZoneAbbreviation(estZone);
+            string localAbbrev = GetTimeZoneAbbreviation(localZone);
 
-                //selectedCustomerId = Convert.ToInt32(CustomerComboBox.SelectedValue);
-                //LoadAppointments(selectedCustomerId);
-            }
-            else
-            {
-                selectedCustomerId = null;
-                LoadAppointments();
-            }
+            return $"{estTime:MM/dd/yyyy hh:mm tt} {estAbbrev}\n" +
+                   $"{localTime:MM/dd/yyyy hh:mm tt} {localAbbrev}";
         }
+
+        // Helper method to get timezone abbreviation
+        private string GetTimeZoneAbbreviation(TimeZoneInfo timeZone)
+        {
+            // Handle special case for EST/EDT
+            if (timeZone.Id == "Eastern Standard Time")
+            {
+                return timeZone.IsDaylightSavingTime(DateTime.Now) ? "EDT" : "EST";
+            }
+
+            // For other zones, extract abbreviation from StandardName or Id
+            string[] parts = timeZone.StandardName.Split(' ');
+            if (parts.Length > 0)
+            {
+                // Try to create abbreviation from first letters
+                string abbrev = string.Concat(parts.Select(p => char.ToUpper(p[0])));
+                return timeZone.IsDaylightSavingTime(DateTime.Now) ?
+                    abbrev.Replace("ST", "DT") : abbrev;
+            }
+
+            // Fallback to just the ID's first letters
+            return string.Concat(timeZone.Id.Split(' ').Select(w => char.ToUpper(w[0])));
+        }
+
+        //private void LoadAppointments(int? customerId = null)
+        //{
+        //    DataTable appointments = customerId.HasValue ?
+        //        dbHelper.GetCustomerAppointments(customerId.Value) :
+        //        dbHelper.GetAllAppointments();
+
+        //    AppointmentsDataGridView.Rows.Clear();
+        //    if (appointments != null && appointments.Rows.Count > 0)
+        //    {
+        //        string selectedTimeZoneId = TimeZoneComboBox.SelectedValue?.ToString() ?? TimeZoneInfo.Local.Id;
+
+        //        foreach (DataRow row in appointments.Rows)
+        //        {
+        //            DateTime startUtc = ((DateTime)row["start"]).ToUniversalTime();
+        //            DateTime endUtc = ((DateTime)row["end"]).ToUniversalTime();
+
+        //            var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(selectedTimeZoneId);
+        //            DateTime start = TimeZoneInfo.ConvertTimeFromUtc(startUtc, userTimeZone);
+        //            DateTime end = TimeZoneInfo.ConvertTimeFromUtc(endUtc, userTimeZone);
+
+        //            AppointmentsDataGridView.Rows.Add(
+        //                row["customerName"],
+        //                row["title"],
+        //                AppointmentHelper.FormatAppointmentTimeZones(start, selectedTimeZoneId),
+        //                AppointmentHelper.FormatAppointmentTimeZones(end, selectedTimeZoneId),
+        //                row["type"]
+        //            );
+        //        }
+
+        //        // Adjust column widths
+        //        AppointmentsDataGridView.Columns["start"].Width = 200;
+        //        AppointmentsDataGridView.Columns["end"].Width = 200;
+
+        //        // Set default row height to accommodate two lines
+        //        AppointmentsDataGridView.RowTemplate.Height = 40;
+        //    }
+        //}
+
+
+
+
+        //private void CustomerComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        //{
+        //    if (CustomerComboBox.SelectedValue != null)
+        //    {
+        //        DataRowView drv = (DataRowView)CustomerComboBox.SelectedItem;
+        //        selectedCustomerId = Convert.ToInt32(drv["customerId"]); 
+        //        LoadAppointments(selectedCustomerId);
+
+        //        //selectedCustomerId = Convert.ToInt32(CustomerComboBox.SelectedValue);
+        //        //LoadAppointments(selectedCustomerId);
+        //    }
+        //    else
+        //    {
+        //        selectedCustomerId = null;
+        //        LoadAppointments();
+        //    }
+        //}
+        
         private void BttnCreate_Click(object sender, EventArgs e)
         {
             try
@@ -357,6 +504,7 @@ namespace schedulingApp
             URLInput.Text = "";
             StartDatePicker.Value = DateTime.Now;
             EndDatePicker.Value = DateTime.Now.AddHours(1);
+            CustomerComboBox.SelectedIndex = 0;
         }
         private void BttnExit_Click(object sender, EventArgs e)
         {

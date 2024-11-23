@@ -203,24 +203,57 @@ namespace schedulingApp
             if (existingAppointments == null || existingAppointments.Rows.Count == 0)
                 return false;
 
-           
+            // Convert new appointment times to UTC
             DateTime newStartUtc = TimeZoneInfo.ConvertTimeToUtc(newStartTime, LocalZone);
             DateTime newEndUtc = TimeZoneInfo.ConvertTimeToUtc(newEndTime, LocalZone);
 
             foreach (DataRow row in existingAppointments.Rows)
             {
-                DateTime existingStartUtc = ((DateTime)row["start"]).ToUniversalTime();
-                DateTime existingEndUtc = ((DateTime)row["end"]).ToUniversalTime();
+                // Get existing appointment times and ensure they're in UTC
+                DateTime existingStartUtc = DateTime.SpecifyKind(
+                    Convert.ToDateTime(row["start"]),
+                    DateTimeKind.Utc);
+                DateTime existingEndUtc = DateTime.SpecifyKind(
+                    Convert.ToDateTime(row["end"]),
+                    DateTimeKind.Utc);
 
-                // Check for overlap
-                if (!(newEndUtc <= existingStartUtc || newStartUtc >= existingEndUtc))
+                // Check for any type of overlap:
+                // 1. New appointment starts during existing appointment
+                // 2. New appointment ends during existing appointment
+                // 3. New appointment completely contains existing appointment
+                // 4. New appointment is completely contained within existing appointment
+                if (newStartUtc < existingEndUtc && newEndUtc > existingStartUtc)
                 {
                     return true; // Overlap found
                 }
             }
 
             return false;
-        }    
+        }
+        //public static bool HasOverlappingAppointments(DateTime newStartTime, DateTime newEndTime, DataTable existingAppointments)
+        //{
+        //    if (existingAppointments == null || existingAppointments.Rows.Count == 0)
+        //        return false;
+
+
+        //    DateTime newStartUtc = TimeZoneInfo.ConvertTimeToUtc(newStartTime, LocalZone);
+        //    DateTime newEndUtc = TimeZoneInfo.ConvertTimeToUtc(newEndTime, LocalZone);
+
+        //    foreach (DataRow row in existingAppointments.Rows)
+        //    {
+        //        DateTime existingStartUtc = ((DateTime)row["start"]).ToUniversalTime();
+        //        DateTime existingEndUtc = ((DateTime)row["end"]).ToUniversalTime();
+
+        //        // Check for overlap
+        //        if (!(newEndUtc <= existingStartUtc || newStartUtc >= existingEndUtc))
+        //        {
+        //            return true; // Overlap found
+        //        }
+        //    }
+
+        //    return false;
+        //}    
+
         public static DateTime AdjustAppointmentTimeForTimeZone(DateTime appointmentTime, TimeZoneInfo sourceTimeZone, TimeZoneInfo targetTimeZone)
         {
             return TimeZoneInfo.ConvertTime(appointmentTime, sourceTimeZone, targetTimeZone);
