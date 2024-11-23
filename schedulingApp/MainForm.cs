@@ -294,9 +294,19 @@ namespace schedulingApp
                 var cell = calendarGrid.Rows[e.RowIndex].Cells[e.ColumnIndex];
                 if (cell.Tag is DateTime date)
                 {
-                    selectedDate = date;
+                    // If clicking on already selected date, deselect it
+                    if (selectedDate.HasValue && selectedDate.Value.Date == date.Date)
+                    {
+                        selectedDate = null;
+                    }
+                    else
+                    {
+                        selectedDate = date;
+                    }
+
+                    // Always update the appointment list and refresh calendar
                     UpdateAppointmentList();
-                    DisplayCalendarGrid(); // Refresh to show selection
+                    DisplayCalendarGrid();
                 }
             }
         }
