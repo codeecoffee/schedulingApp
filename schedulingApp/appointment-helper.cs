@@ -1,7 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
+using System.Drawing;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace schedulingApp
 {
@@ -22,11 +27,63 @@ namespace schedulingApp
         {
             public static TimeSpan Start => new TimeSpan(9, 0, 0);  // 9 AM
             public static TimeSpan End => new TimeSpan(17, 0, 0);   // 5 PM
+            
+            public static (DateTime start, DateTime end) GetUtcBusinessHours(DateTime date)
+            {
+                // Ensure the input date is treated as Eastern Time
+                DateTime easternDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Unspecified);
+                easternDate = TimeZoneInfo.ConvertTime(easternDate, EasternZone);
+
+                // Create Eastern time business hours
+                DateTime easternStart = easternDate.Add(Start);
+                DateTime easternEnd = easternDate.Add(End);
+
+                // Convert to UTC
+                DateTime utcStart = TimeZoneInfo.ConvertTimeToUtc(easternStart, EasternZone);
+                DateTime utcEnd = TimeZoneInfo.ConvertTimeToUtc(easternEnd, EasternZone);
+
+                return (utcStart, utcEnd);
+            }
         }
 
+
+        // Update the debug info method to match
+        public static string GetBusinessHoursDebugInfo(DateTime localStartTime, DateTime localEndTime, string timeZoneId)
+        {
+            var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            var easternZone = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
+
+            DateTime easternStartTime = TimeZoneInfo.ConvertTime(localStartTime, userTimeZone, easternZone);
+            DateTime easternEndTime = TimeZoneInfo.ConvertTime(localEndTime, userTimeZone, easternZone);
+
+            TimeSpan startTimeOfDay = easternStartTime.TimeOfDay;
+            TimeSpan endTimeOfDay = easternEndTime.TimeOfDay;
+            bool withinBusinessHours = startTimeOfDay >= BusinessHours.Start &&
+                                     (endTimeOfDay <= BusinessHours.End ||
+                                      (endTimeOfDay.Hours == 17 && endTimeOfDay.Minutes == 0));
+
+            return $"Local Start: {localStartTime:MM/dd/yyyy HH:mm}\n" +
+                   $"Local End: {localEndTime:MM/dd/yyyy HH:mm}\n" +
+                   $"User TimeZone: {timeZoneId}\n" +
+                   $"Eastern Start: {easternStartTime:MM/dd/yyyy HH:mm}\n" +
+                   $"Eastern End: {easternEndTime:MM/dd/yyyy HH:mm}\n" +
+                   $"Start Hour (ET): {easternStartTime.Hour}\n" +
+                   $"End Hour (ET): {easternEndTime.Hour}\n" +
+                   $"End Minute (ET): {easternEndTime.Minute}\n\n" +
+                   $"Same Day: {easternStartTime.Date == easternEndTime.Date}\n" +
+                   $"Is Weekend: {easternStartTime.DayOfWeek == DayOfWeek.Saturday || easternStartTime.DayOfWeek == DayOfWeek.Sunday}\n" +
+                   $"Start Time Valid: {startTimeOfDay >= BusinessHours.Start}\n" +
+                   $"End Time Valid: {endTimeOfDay <= BusinessHours.End}\n" +
+                   $"Within Business Hours: {withinBusinessHours}";
+        }
         public static List<TimeZoneDisplayInfo> GetAvailableTimeZones()
         {
             return TimeZoneInfo.GetSystemTimeZones()
+                .Where(tz =>
+                    tz.Id.Contains("Pacific") ||
+                    tz.Id.Contains("Eastern") ||
+                    tz.Id == "America/New_York" ||
+                    tz.Id == "America/Los_Angeles")
                 .Select(tz => new TimeZoneDisplayInfo
                 {
                     Id = tz.Id,
@@ -37,6 +94,18 @@ namespace schedulingApp
                 .OrderBy(tz => tz.UtcOffset)
                 .ToList();
         }
+        //{
+        //    return TimeZoneInfo.GetSystemTimeZones()
+        //        .Select(tz => new TimeZoneDisplayInfo
+        //        {
+        //            Id = tz.Id,
+        //            DisplayName = tz.DisplayName,
+        //            UtcOffset = tz.GetUtcOffset(DateTime.Now),
+        //            IsDaylightSavingTime = tz.IsDaylightSavingTime(DateTime.Now)
+        //        })
+        //        .OrderBy(tz => tz.UtcOffset)
+        //        .ToList();
+        //}
 
         public static string GetTimeZoneInfoMessage(string timeZoneId)
         {
@@ -178,58 +247,99 @@ namespace schedulingApp
             }
         }
 
-        public static bool IsWithinBusinessHours(DateTime localStartTime, DateTime localEndTime)
-        {
-            // Convert local time to Eastern Time
-            DateTime easternStart = TimeZoneInfo.ConvertTime(localStartTime, LocalZone, EasternZone);
-            DateTime easternEnd = TimeZoneInfo.ConvertTime(localEndTime, LocalZone, EasternZone);
+        //public static bool IsWithinBusinessHours(DateTime localStartTime, DateTime localEndTime)
+        //{
+        //    // Convert local time to Eastern Time
+        //    DateTime easternStart = TimeZoneInfo.ConvertTime(localStartTime, LocalZone, EasternZone);
+        //    DateTime easternEnd = TimeZoneInfo.ConvertTime(localEndTime, LocalZone, EasternZone);
 
-            // Check if it's weekend
-            if (easternStart.DayOfWeek == DayOfWeek.Saturday ||
-                easternStart.DayOfWeek == DayOfWeek.Sunday ||
-                easternEnd.DayOfWeek == DayOfWeek.Saturday ||
-                easternEnd.DayOfWeek == DayOfWeek.Sunday)
-            {
-                return false;
-            }
+        //    // Check if it's weekend
+        //    if (easternStart.DayOfWeek == DayOfWeek.Saturday ||
+        //        easternStart.DayOfWeek == DayOfWeek.Sunday ||
+        //        easternEnd.DayOfWeek == DayOfWeek.Saturday ||
+        //        easternEnd.DayOfWeek == DayOfWeek.Sunday)
+        //    {
+        //        return false;
+        //    }
 
-            // Business hours: 9 AM to 5 PM ET
-            return easternStart.TimeOfDay >= BusinessHours.Start &&
-                   easternEnd.TimeOfDay <= BusinessHours.End;
-        }
+        //    // Business hours: 9 AM to 5 PM ET
+        //    return easternStart.TimeOfDay >= BusinessHours.Start &&
+        //           easternEnd.TimeOfDay <= BusinessHours.End;
+        //}
+
 
         public static bool HasOverlappingAppointments(DateTime newStartTime, DateTime newEndTime, DataTable existingAppointments)
         {
             if (existingAppointments == null || existingAppointments.Rows.Count == 0)
                 return false;
 
-            // Convert new appointment times to UTC
-            DateTime newStartUtc = TimeZoneInfo.ConvertTimeToUtc(newStartTime, LocalZone);
-            DateTime newEndUtc = TimeZoneInfo.ConvertTimeToUtc(newEndTime, LocalZone);
+            // Ensure times are in UTC for comparison
+            DateTime newStartUtc = newStartTime.Kind == DateTimeKind.Utc
+                ? newStartTime
+                : TimeZoneInfo.ConvertTimeToUtc(newStartTime, TimeZoneInfo.Local);
+
+            DateTime newEndUtc = newEndTime.Kind == DateTimeKind.Utc
+                ? newEndTime
+                : TimeZoneInfo.ConvertTimeToUtc(newEndTime, TimeZoneInfo.Local);
 
             foreach (DataRow row in existingAppointments.Rows)
             {
-                // Get existing appointment times and ensure they're in UTC
+                // Get existing appointment times (stored in UTC in database)
                 DateTime existingStartUtc = DateTime.SpecifyKind(
                     Convert.ToDateTime(row["start"]),
                     DateTimeKind.Utc);
+
                 DateTime existingEndUtc = DateTime.SpecifyKind(
                     Convert.ToDateTime(row["end"]),
                     DateTimeKind.Utc);
 
                 // Check for any type of overlap:
-                // 1. New appointment starts during existing appointment
-                // 2. New appointment ends during existing appointment
-                // 3. New appointment completely contains existing appointment
-                // 4. New appointment is completely contained within existing appointment
-                if (newStartUtc < existingEndUtc && newEndUtc > existingStartUtc)
+                // Case 1: New appointment starts during an existing appointment
+                // Case 2: New appointment ends during an existing appointment
+                // Case 3: New appointment completely contains an existing appointment
+                // Case 4: New appointment is completely contained within an existing appointment
+                bool hasOverlap = (newStartUtc < existingEndUtc && newEndUtc > existingStartUtc);
+
+                if (hasOverlap)
                 {
-                    return true; // Overlap found
+                    return true;
                 }
             }
 
             return false;
         }
+        //public static bool HasOverlappingAppointments(DateTime newStartTime, DateTime newEndTime, DataTable existingAppointments)
+        //{
+        //    if (existingAppointments == null || existingAppointments.Rows.Count == 0)
+        //        return false;
+
+        //    // Convert new appointment times to UTC
+        //    DateTime newStartUtc = TimeZoneInfo.ConvertTimeToUtc(newStartTime, LocalZone);
+        //    DateTime newEndUtc = TimeZoneInfo.ConvertTimeToUtc(newEndTime, LocalZone);
+
+        //    foreach (DataRow row in existingAppointments.Rows)
+        //    {
+        //        // Get existing appointment times and ensure they're in UTC
+        //        DateTime existingStartUtc = DateTime.SpecifyKind(
+        //            Convert.ToDateTime(row["start"]),
+        //            DateTimeKind.Utc);
+        //        DateTime existingEndUtc = DateTime.SpecifyKind(
+        //            Convert.ToDateTime(row["end"]),
+        //            DateTimeKind.Utc);
+
+        //        // Check for any type of overlap:
+        //        // 1. New appointment starts during existing appointment
+        //        // 2. New appointment ends during existing appointment
+        //        // 3. New appointment completely contains existing appointment
+        //        // 4. New appointment is completely contained within existing appointment
+        //        if (newStartUtc < existingEndUtc && newEndUtc > existingStartUtc)
+        //        {
+        //            return true; // Overlap found
+        //        }
+        //    }
+
+        //    return false;
+        //}
         //public static bool HasOverlappingAppointments(DateTime newStartTime, DateTime newEndTime, DataTable existingAppointments)
         //{
         //    if (existingAppointments == null || existingAppointments.Rows.Count == 0)

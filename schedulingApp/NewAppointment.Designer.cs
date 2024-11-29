@@ -130,6 +130,8 @@
             // 
             StartDatePicker.Location = new Point(39, 430);
             StartDatePicker.Margin = new Padding(2);
+            StartDatePicker.MaxDate = new DateTime(2025, 1, 31, 0, 0, 0, 0);
+            StartDatePicker.MinDate = new DateTime(2019, 1, 1, 0, 0, 0, 0);
             StartDatePicker.Name = "StartDatePicker";
             StartDatePicker.Size = new Size(204, 23);
             StartDatePicker.TabIndex = 39;

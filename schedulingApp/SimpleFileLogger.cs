@@ -26,7 +26,7 @@ namespace schedulingApp
                 {
                     string content = File.ReadAllText(LogFile);
                     Console.WriteLine($"Log file content: {content}");
-                    MessageBox.Show($"Log written successfully.\nPath: {LogFile}\nContent: {content}");
+                    //MessageBox.Show($"Log written successfully.\nPath: {LogFile}\nContent: {content}");
                 }
             }
             catch (UnauthorizedAccessException uaEx)

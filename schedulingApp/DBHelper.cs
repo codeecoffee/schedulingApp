@@ -880,7 +880,7 @@ namespace schedulingApp
             }
         }
 
-        public bool HasOverlappingAppointments(int customerId, DateTime startTime, DateTime endTime, int? excludeAppointmentId = null)
+        public bool HasOverlappingAppointments(DateTime startTime, DateTime endTime, int? excludeAppointmentId = null)
         {
             try
             {
@@ -890,8 +890,7 @@ namespace schedulingApp
                     string query = @"
                 SELECT COUNT(*)
                 FROM appointment
-                WHERE customerId = @customerId
-                AND ((start BETWEEN @start AND @end)
+                WHERE ((start BETWEEN @start AND @end)
                      OR (end BETWEEN @start AND @end)
                      OR (start <= @start AND end >= @end))";
 
@@ -900,7 +899,6 @@ namespace schedulingApp
 
                     using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
-                        command.Parameters.AddWithValue("@customerId", customerId);
                         command.Parameters.AddWithValue("@start", startTime);
                         command.Parameters.AddWithValue("@end", endTime);
                         if (excludeAppointmentId.HasValue)
@@ -943,7 +941,7 @@ namespace schedulingApp
                 return (false, $"Error cancelling appointment: {ex.Message}");
             }
         }
-
+        //this func receives the time in UTC already
         public (bool success, string message) AddAppointment(
             int customerId,
             int userId,
@@ -953,31 +951,22 @@ namespace schedulingApp
             string contact,
             string type,
             string url,
-            DateTime startLocal,
-            DateTime endLocal)
+            DateTime startUtc,
+            DateTime endUtc)
         {
             try
             {
-                // Convert to UTC for storage
-                DateTime startUtc = TimeZoneInfo.ConvertTimeToUtc(startLocal);
-                DateTime endUtc = TimeZoneInfo.ConvertTimeToUtc(endLocal);
-
-                // Check for overlapping appointments
-                if (HasOverlappingAppointments(customerId, startUtc, endUtc))
-                {
-                    return (false, "This customer already has an appointment scheduled during this time.");
-                }
 
                 using (MySqlConnection connection = new MySqlConnection(connectionString))
                 {
                     connection.Open();
                     string query = @"
-                INSERT INTO appointment 
-                (customerId, userId, title, description, location, contact, type, url,
-                 start, end, createDate, createdBy, lastUpdate, lastUpdateBy)
-                VALUES 
-                (@customerId, @userId, @title, @description, @location, @contact, @type,
-                 @url, @start, @end, @createDate, @createdBy, @lastUpdate, @lastUpdateBy)";
+            INSERT INTO appointment 
+            (customerId, userId, title, description, location, contact, type, url,
+             start, end, createDate, createdBy, lastUpdate, lastUpdateBy)
+            VALUES 
+            (@customerId, @userId, @title, @description, @location, @contact, @type,
+             @url, @start, @end, @createDate, @createdBy, @lastUpdate, @lastUpdateBy)";
 
                     using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
@@ -1018,15 +1007,12 @@ namespace schedulingApp
             string contact,
             string type,
             string url,
-            DateTime startLocal,
-            DateTime endLocal)
+            DateTime startUtc,
+            DateTime endUtc)
         {
             try
             {
-                // Convert to UTC for storage
-                DateTime startUtc = TimeZoneInfo.ConvertTimeToUtc(startLocal);
-                DateTime endUtc = TimeZoneInfo.ConvertTimeToUtc(endLocal);
-
+               
                 using (MySqlConnection connection = new MySqlConnection(connectionString))
                 {
                     connection.Open();
