@@ -111,55 +111,124 @@ namespace schedulingApp
             }
         }
 
+        //public void CheckUpcomingAppointments(int userId)
+        //{
+        //    try
+        //    {
+        //        // returns the appt time in UTC from db
+        //        var appointments = dbHelper.GetTodaysUpcomingAppointments(userId);
+        //        if (appointments.Count <= 0) { return; }
+
+        //        // Get the EST timezone
+        //        TimeZoneInfo estTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+                
+
+        //        foreach (var (customerName, title, startTimeUtc) in appointments)
+        //        {
+        //            //get local machine's time offset to Utc 
+        //            double localMachineOffsetToUtc = TimeZoneInfo.Local.GetUtcOffset(DateTime.Now).TotalHours;
+        //            double estOffset = estTimeZone.BaseUtcOffset.TotalHours;
+
+        //            if (localMachineOffsetToUtc != estOffset) 
+        //            {
+        //                var diffOfTheTwoTimes = Math.Abs(localMachineOffsetToUtc - estOffset);
+        //                MessageBox.Show($"diffOfTheTwoTimes: {diffOfTheTwoTimes}");
+        //                var timeResult = startTimeUtc.AddHours(diffOfTheTwoTimes);
+        //                MessageBox.Show($"timeResult: {timeResult}");
+        //            }
+        //            //MessageBox.Show($"localMachineTimeOffsetToUtc: {localMachineOffsetToUtc}");
+
+
+
+
+        //            // Convert UTC to EST properly accounting for daylight savings
+        //            //DateTime startTimeUtcSpecified = DateTime.SpecifyKind(startTimeUtc, DateTimeKind.Utc);
+        //            //DateTime startTimeEst = TimeZoneInfo.ConvertTimeFromUtc(startTimeUtcSpecified, estTimeZone);
+        //            //DateTime startTimeEst = TimeZoneInfo.ConvertTimeFromUtc(startTimeUtc, estTimeZone);
+
+        //            //offset
+        //            // Get the base UTC offset in hours
+        //            //double offsetHours = estTimeZone.BaseUtcOffset.TotalHours;
+        //            //DateTime utcNow = DateTime.UtcNow;
+        //            //MessageBox.Show($"UtcNow: {utcNow}");
+        //            //DateTime currentUtcToEst = DateTime.UtcNow.AddHours(offsetHours);
+        //            //MessageBox.Show($"offsetHours: {offsetHours}");
+        //            //MessageBox.Show($"currentUtcToEst: {currentUtcToEst}");
+
+        //            ////DateTime currEst = TimeZoneInfo.ConvertTimeFromUtc(currentUtc, estTimeZone);
+        //            ////currEst = DateTime.SpecifyKind(currEst, DateTimeKind.Local);
+
+
+        //            ////DateTime currEst = TimeZoneInfo.ConvertTimeFromUtc(DateTime.Now, estTimeZone);
+        //            //MessageBox.Show($"Start Time EST: {startTimeEst}");
+
+        //            //// Calculate time difference from current time
+        //            //TimeSpan timeDifference = startTimeEst - (currentUtcToEst);
+
+        //            //MessageBox.Show($"[func: CheckUpcomingappts - LoginForm] Start Time EST: {startTimeEst} | currEST: {currentUtcToEst} | Time diff: {timeDifference}");
+
+        //            //if (timeDifference.TotalMinutes is >= 0 and <= 15)
+        //            //{
+        //            //    MessageBox.Show(
+        //            //        $"Upcoming Appointment Reminder:\n\n" +
+        //            //        $"Customer: {customerName}\n" +
+        //            //        $"Title: {title}\n" +
+        //            //        $"Time: {startTimeEst:hh:mm tt}\n\n" +
+        //            //        $"Starting in {Math.Round(timeDifference.TotalMinutes)} minutes",
+        //            //        "Appointment Reminder",
+        //            //        MessageBoxButtons.OK,
+        //            //        MessageBoxIcon.Information);
+        //            //}
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show($"Error checking upcoming appointments: {ex.Message}",
+        //            "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        //    }
+        //}
+
 
         public void CheckUpcomingAppointments(int userId)
         {
-            MessageBox.Show("youve reached the checkupcomingappts func ");
-            //MessageBox.Show($"Appts from db: {appointments.Count} userID: {userId}");
-            var allAppts = dbHelper.GetTodaysUpcomingAppointments(userId);
-            //var allAppts = dbHelper.GetAllAppointments();
-            MessageBox.Show($"number of appts: {allAppts} UserId: {userId}");
+            try
+            {
+                //returns the appt time in Utc 
+                //1. get appts in UTC from db 
+                var appointments = dbHelper.GetTodaysUpcomingAppointments(userId);
 
+                if (appointments.Count <= 0) { return; }
 
+                foreach (var (customerName, title, startTimeUtc) in appointments)
+                {
+                    DateTime startTimeEst = startTimeUtc.AddHours(-5);
+                    DateTime currDateTime = DateTime.Now;
 
+                    //MessageBox.Show($"[func CheckUpcomingAppts ]This is the var startTimeEST {startTimeEst}");
+                    TimeSpan timeDifference = startTimeEst - currDateTime;
+                    //MessageBox.Show($"[func CheckUpcomingAppts ] timeDifference {timeDifference}");
+                    //                    MessageBox.Show($"[Func GetTodaysAppt] upcomingAppts: {string.Join(", ", appointments.Select(appointment =>
+                    //$"{appointment.CustomerName} - {appointment.Title} at {appointment.StartTime}"))}");
 
-
-            //try
-            //{
-            //    //1. get appts in UTC from db 
-            //    //var appointments = dbHelper.GetTodaysUpcomingAppointments(userId);
-
-            //    //if (appointments.Count <= 0) { return; }
-
-            //    ////2. convert time of appointment to -5
-            //    DateTime currentUtc = DateTime.UtcNow;
-            //    DateTime currentEst = currentUtc.AddHours(-5);
-            //    //3. compare to time now in est
-            //    //foreach (var (customerName, title, startTimeUtc) in appointments)
-            //    //{
-            //    //    DateTime startTimeEst = startTimeUtc.AddHours(-5);
-            //    //    TimeSpan timeDifference = startTimeEst - currentEst;
-
-            //    //MessageBox.Show($"[func: CheckUpcomingappts - LoginForm]\n current UTC {currentUtc}\n currentEst var: {currentEst}\n Start Time Est: {startTimeEst}\n Time diff: {timeDifference}");
-            //    //    if (timeDifference.TotalMinutes is >= 0 and <= 15)
-            //    //    {
-            //    //        MessageBox.Show(
-            //    //            $"Upcoming Appointment Reminder:\n\n" +
-            //    //            $"Customer: {customerName}\n" +
-            //    //            $"Title: {title}\n" +
-            //    //            $"Time: {startTimeEst:hh:mm tt}\n\n" +
-            //    //            $"Starting in {Math.Round(timeDifference.TotalMinutes)} minutes",
-            //    //            "Appointment Reminder",
-            //    //            MessageBoxButtons.OK,
-            //    //            MessageBoxIcon.Information);
-            //    //    }
-            //    //}
-            //}
-            //catch (Exception ex)
-            //{
-            //    MessageBox.Show($"Error checking upcoming appointments: {ex.Message}",
-            //        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            //}
+                    if (timeDifference.TotalMinutes is >= 0 and <= 15)
+                    {
+                        MessageBox.Show(
+                            $"Upcoming Appointment Reminder:\n\n" +
+                            $"Customer: {customerName}\n" +
+                            $"Title: {title}\n" +
+                            $"Time: {startTimeEst:hh:mm tt}\n\n" +
+                            $"Starting in {Math.Round(timeDifference.TotalMinutes)} minutes",
+                            "Appointment Reminder",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error checking upcoming appointments: {ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void bttnRegister_Click(object sender, EventArgs e)

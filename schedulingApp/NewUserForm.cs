@@ -30,7 +30,7 @@ namespace schedulingApp
                 return;
             }
             
-            //MessageBox.Show($"This is what password is: {password} and this is what confirmpass is: {confirmPassword}");
+
            //2.check if pass and confirmation match
             if (password != confirmPassword)
             {

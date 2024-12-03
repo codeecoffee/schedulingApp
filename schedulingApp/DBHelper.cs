@@ -104,7 +104,7 @@ namespace schedulingApp
                     command.Parameters.AddWithValue("@username", username);
                     int count = Convert.ToInt32(command.ExecuteScalar());
 
-                    //MessageBox.Show($"You hit [Func UsernameExists:DBHelper] and this is the user count: {count}");
+                    
 
                     if (count > 0) { return (true, "Username already taken"); }
                     else { return (false,""); }
@@ -120,7 +120,7 @@ namespace schedulingApp
             {
                 bool userIsInDB = UsernameExists(username).exists;
 
-                //MessageBox.Show($"[Func RegisterUser] this is the value on userIsInDB: {userIsInDB }");
+              
                 
                 //First check if username already exists
                 if (userIsInDB)
@@ -1034,10 +1034,10 @@ namespace schedulingApp
                                 DateTime appointmentStart = reader.GetDateTime("startTime");
 
                                 // Convert UTC to EST
-                                DateTime startTimeEst = appointmentStart.AddHours(-5);
-
+                                
+                                //!TODO Change the date!!! 
                                 // Check if appointment is on December 3rd, 2024
-                                if (startTimeEst.Date == new DateTime(2024, 12, 3))
+                                if (appointmentStart.Date == new DateTime(2024, 12, 3))
                                 {
                                     upcomingAppointments.Add((
                                         reader.GetString("customerName"),
@@ -1055,13 +1055,11 @@ namespace schedulingApp
                 MessageBox.Show($"Error retrieving appointments: {ex.Message}");
                 throw;
             }
-
+            //MessageBox.Show($"[Func GetTodaysAppt] Values received: userId: {userId}");
+            //MessageBox.Show($"[Func GetTodaysAppt] upcomingAppts: {string.Join(", ", upcomingAppointments.Select(appointment =>
+            //$"{appointment.CustomerName} - {appointment.Title} at {appointment.StartTime}"))}");
             return upcomingAppointments;
         }
-
-
-
-
 
         public (bool success, string message) UpdateAppointment(
             int appointmentId,
@@ -1252,6 +1250,35 @@ namespace schedulingApp
         //    return upcomingAppointments;
         //}
 
+        //public int GetUserIdByUsername(string username)
+        //{
+        //    try
+        //    {
+        //        using (MySqlConnection connection = new MySqlConnection(connectionString))
+        //        {
+        //            connection.Open();
+        //            string query = "SELECT userId FROM user WHERE userName = @username";
+
+        //            using (MySqlCommand command = new MySqlCommand(query, connection))
+        //            {
+        //                command.Parameters.AddWithValue("@username", username);
+
+        //                object result = command.ExecuteScalar();
+        //                if (result != null && result != DBNull.Value)
+        //                {
+        //                    return Convert.ToInt32(result);
+        //                }
+        //                return 0;
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine($"Error finding user ID: {ex.Message}");
+        //        return 0;
+        //    }
+        //}
+
         public int GetUserIdByUsername(string username)
         {
             try
@@ -1261,25 +1288,34 @@ namespace schedulingApp
                     connection.Open();
                     string query = "SELECT userId FROM user WHERE userName = @username";
 
+                   
+
                     using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@username", username);
 
                         object result = command.ExecuteScalar();
+                        
+
                         if (result != null && result != DBNull.Value)
                         {
-                            return Convert.ToInt32(result);
+                            int userId = Convert.ToInt32(result);
+                            
+                            return userId;
                         }
-                        return 0;
+
+                        MessageBox.Show("No user found with this username"); 
+                        throw new Exception($"No user found with username: {username}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error finding user ID: {ex.Message}");
-                return 0;
+                MessageBox.Show($"Error finding user ID: {ex.Message}");
+                throw; // Propagate the error instead of returning 0
             }
         }
+
     }
 
 }

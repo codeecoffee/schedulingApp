@@ -89,10 +89,10 @@ namespace schedulingApp
             EndDatePicker.CustomFormat = "MM/dd/yyyy HH:mm";
 
             //min/  max time
-            StartDatePicker.MinDate = DateTime.Today.AddHours(9);
-            StartDatePicker.MaxDate = DateTime.Today.AddYears(1).AddHours(17);
-            EndDatePicker.MinDate = DateTime.Today.AddHours(9);
-            EndDatePicker.MaxDate = DateTime.Today.AddYears(1).AddHours(17);
+            StartDatePicker.MinDate = DateTime.Today;
+            StartDatePicker.MaxDate = DateTime.Today.AddYears(1);
+            EndDatePicker.MinDate = DateTime.Today;
+            EndDatePicker.MaxDate = DateTime.Today.AddYears(1);
 
 
             // Set up DataGridView
@@ -266,7 +266,7 @@ namespace schedulingApp
                 //DateTime startUtc = startTime.ToUniversalTime();
                 //DateTime endUtc = endTime.ToUniversalTime();
 
-                MessageBox.Show($"[func BttnCreate_Click] Start time input: {startTime} endTime: {endTime} | Time in UTC, Start: {startTimeUtc} END: {endTimeUtc}");
+                //MessageBox.Show($"[func BttnCreate_Click] Start time input: {startTime} endTime: {endTime} | Time in UTC, Start: {startTimeUtc} END: {endTimeUtc}");
 
                 if (dbHelper.HasOverlappingAppointments(startTimeUtc, endTimeUtc))
                 {
@@ -274,9 +274,22 @@ namespace schedulingApp
                     return;
                 }
 
+                int userId;
+                try
+                {
+                    userId = dbHelper.GetUserIdByUsername(DatabaseHelper.CurrentUser);
+                    Console.WriteLine($"Current user: {DatabaseHelper.CurrentUser}, User ID: {userId}");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error getting user ID: {ex.Message}", "Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
                 var (success, message) = dbHelper.AddAppointment(
                     selectedCustomerId.Value,
-                    dbHelper.GetUserIdByUsername (DatabaseHelper.CurrentUser), //curr user ID 
+                    userId, //curr user ID 
                     TitleInput.Text.Trim(),
                     DescriptionInput.Text.Trim(),
                     LocationInput.Text.Trim(),
@@ -288,7 +301,7 @@ namespace schedulingApp
 
                 if (success)
                 {
-                    MessageBox.Show($"current user: {dbHelper.GetUserIdByUsername(DatabaseHelper.CurrentUser)}");
+                    //MessageBox.Show($"current user: {dbHelper.GetUserIdByUsername(DatabaseHelper.CurrentUser)}");
                     MessageBox.Show("Appointment created successfully!", "Success",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
                     LoadAppointments(selectedCustomerId);
