@@ -15,13 +15,110 @@ namespace schedulingApp
     public partial class MainForm : Form
     {
         private readonly DatabaseHelper dbHelper;
-        private DateTime currentMonth = DateTime.Now;
+        private DateTime currentMonth;  // Remove the initialization here
         private DateTime? selectedDate = null;
-
-        private Dictionary<DateTime, List<string>> appointments; //old
-
-
         private Button bttnReports;
+        private NewCustomerForm currentNewCustomerForm;
+
+        private readonly DataGridView calendarGrid;
+        private readonly Button prevMonthBtn;
+        private readonly Button nextMonthBtn;
+
+
+        public MainForm(string username)
+        {
+            InitializeComponent();
+            InitializeReportsButton();
+            dbHelper = new DatabaseHelper();
+
+            // Remove existing calendar panel
+            this.Controls.Remove(calendarPanel);
+
+            // Create and configure DataGridView
+            calendarGrid = new DataGridView
+            {
+                Location = new Point(636, 151),
+                Size = new Size(583, 475),
+                ReadOnly = true,
+                AllowUserToAddRows = false,
+                AllowUserToDeleteRows = false,
+                AllowUserToResizeRows = false,
+                AllowUserToResizeColumns = false,
+                RowHeadersVisible = false,
+                ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
+                ColumnHeadersHeight = 40,
+                RowTemplate = new DataGridViewRow { Height = 80 }, // Increased row height
+                ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle
+                {
+                    BackColor = Color.RoyalBlue,
+                    ForeColor = Color.White,
+                    Font = new Font("Arial", 10, FontStyle.Bold),
+                    Alignment = DataGridViewContentAlignment.MiddleCenter
+                },
+                DefaultCellStyle = new DataGridViewCellStyle
+                {
+                    Alignment = DataGridViewContentAlignment.MiddleCenter,
+                    Font = new Font("Arial", 9, FontStyle.Regular),
+                    Padding = new Padding(3),
+                    WrapMode = DataGridViewTriState.True
+                },
+                SelectionMode = DataGridViewSelectionMode.CellSelect,
+                MultiSelect = false,
+                EnableHeadersVisualStyles = false,
+                BackgroundColor = Color.White,
+                BorderStyle = BorderStyle.Fixed3D,
+                AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None
+            };
+
+            // Configure grid columns
+            string[] days = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+            foreach (string day in days)
+            {
+                DataGridViewColumn column = new DataGridViewTextBoxColumn
+                {
+                    Name = day,
+                    HeaderText = day,
+                    Width = calendarGrid.Width / 7,
+                    DefaultCellStyle = new DataGridViewCellStyle
+                    {
+                        WrapMode = DataGridViewTriState.True
+                    }
+                };
+                calendarGrid.Columns.Add(column);
+            }
+
+            // Add event handlers
+            calendarGrid.CellClick += CalendarGrid_CellClick;
+            calendarGrid.CellFormatting += CalendarGrid_CellFormatting;
+
+            // Update the button click handlers
+            bttnPreviosMonth.Click -= bttnPreviosMonth_Click;  // Remove old handler if exists
+            bttnNextMonth.Click -= bttnNextMonth_Click;        // Remove old handler if exists
+
+            bttnPreviosMonth.Click += (s, e) =>
+            {
+                currentMonth = currentMonth.AddMonths(-1);
+                DisplayCalendarGrid();
+            };
+
+            bttnNextMonth.Click += (s, e) =>
+            {
+                currentMonth = currentMonth.AddMonths(1);
+                DisplayCalendarGrid();
+            };
+
+            // Add to form
+            this.Controls.Add(calendarGrid);
+
+            // Initialize current month
+            currentMonth = DateTime.Today;
+
+            //StartComp();
+            LoadAppointments();
+            DisplayCalendarGrid();
+            ConfigureAppointmentList();
+        }
+
 
         private void InitializeReportsButton()
         {
@@ -45,21 +142,241 @@ namespace schedulingApp
             // Add the click event handler
             bttnReports.Click += new EventHandler(bttnReports_Click);
         }
-        public MainForm()
-        {
 
-            InitializeComponent();
-            InitializeReportsButton();
-            dbHelper = new DatabaseHelper();
-            StartComp();
-            LoadAppointments();
-            DisplayCalendar();
-            ConfigureAppointmentList();
+        private void SetupCalendarGrid()
+        {
+            calendarPanel.ColumnCount = 7;
+            calendarPanel.RowCount = 7;
+
+            // Set column styles
+            calendarPanel.ColumnStyles.Clear();
+            for (int i = 0; i < 7; i++)
+            {
+                calendarPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F / 7F));
+            }
+
+            // Set row styles
+            calendarPanel.RowStyles.Clear();
+            for (int i = 0; i < 7; i++)
+            {
+                calendarPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F / 7F));
+            }
+        }
+
+        private void AddDayHeaders()
+        {
+            string[] dayNames = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+            for (int i = 0; i < 7; i++)
+            {
+                Label dayLabel = new Label
+                {
+                    Text = dayNames[i],
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Dock = DockStyle.Fill,
+                    Font = new Font("Arial", 9, FontStyle.Bold),
+                    ForeColor = Color.Black,
+                    BackColor = Color.LightGray
+                };
+                calendarPanel.Controls.Add(dayLabel, i, 0);
+            }
+        }
+
+        //private void OnDaySelected(DateTime date)
+        //{
+        //    if (selectedDate.HasValue && selectedDate.Value.Date == date.Date)
+        //    {
+        //        selectedDate = null;
+        //    }
+        //    else
+        //    {
+        //        selectedDate = date;
+        //    }
+
+        //    DisplayCalendar(); // Refresh calendar to show selection
+        //    UpdateAppointmentList(); // Update appointment list for selected date
+        //}
+
+        //new calendar 
+        private void DisplayCalendarGrid()
+        {
+            try
+            {
+                calendarGrid.Rows.Clear();
+                labelMonth.Text = currentMonth.ToString("MMMM yyyy");
+
+                DateTime firstDay = new DateTime(currentMonth.Year, currentMonth.Month, 1);
+                int daysInMonth = DateTime.DaysInMonth(currentMonth.Year, currentMonth.Month);
+                int startingDay = (int)firstDay.DayOfWeek;
+
+                // Get appointment data
+                var appointmentCounts = dbHelper.GetMonthlyAppointmentCounts(currentMonth);
+
+                // Calculate needed rows
+                int totalDays = startingDay + daysInMonth;
+                int numberOfRows = (int)Math.Ceiling(totalDays / 7.0);
+
+                // Add rows to grid
+                calendarGrid.Rows.Add(numberOfRows);
+
+                // Set the height for all rows
+                foreach (DataGridViewRow row in calendarGrid.Rows)
+                {
+                    row.Height = 80; // Adjust this value as needed
+                }
+
+                int currentDay = 1;
+                bool monthStarted = false;
+
+                // Fill the calendar
+                for (int row = 0; row < numberOfRows; row++)
+                {
+                    for (int col = 0; col < 7; col++)
+                    {
+                        if (!monthStarted && col == startingDay)
+                        {
+                            monthStarted = true;
+                        }
+
+                        var cell = calendarGrid.Rows[row].Cells[col];
+                        cell.Style.BackColor = Color.White;
+                        cell.Style.SelectionBackColor = Color.LightBlue;
+
+                        if (monthStarted && currentDay <= daysInMonth)
+                        {
+                            DateTime currentDate = new DateTime(currentMonth.Year, currentMonth.Month, currentDay);
+                            string cellText = currentDay.ToString();
+
+                            if (appointmentCounts.ContainsKey(currentDate))
+                            {
+                                cellText += $"\n({appointmentCounts[currentDate]} appt)";
+                                cell.Style.BackColor = Color.LightGreen;
+                            }
+
+                            cell.Value = cellText;
+                            cell.Tag = currentDate;
+
+                            if (selectedDate.HasValue && currentDate.Date == selectedDate.Value.Date)
+                            {
+                                cell.Style.BackColor = Color.Yellow;
+                                cell.Style.SelectionBackColor = Color.Gold;
+                            }
+
+                            currentDay++;
+                        }
+                        else
+                        {
+                            cell.Value = "";
+                            cell.Tag = null;
+                            cell.Style.BackColor = Color.WhiteSmoke;
+                        }
+                    }
+                }
+
+                // Adjust row heights to fill container
+                int availableHeight = calendarGrid.Height - calendarGrid.ColumnHeadersHeight;
+                int rowHeight = availableHeight / numberOfRows;
+                foreach (DataGridViewRow row in calendarGrid.Rows)
+                {
+                    row.Height = rowHeight;
+                }
+
+                calendarGrid.Refresh();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error displaying calendar: {ex.Message}");
+            }
+        }
+
+        private void CalendarGrid_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
+            {
+                var cell = calendarGrid.Rows[e.RowIndex].Cells[e.ColumnIndex];
+                if (cell.Tag is DateTime date)
+                {
+                    // If clicking on already selected date, deselect it
+                    if (selectedDate.HasValue && selectedDate.Value.Date == date.Date)
+                    {
+                        selectedDate = null;
+                    }
+                    else
+                    {
+                        selectedDate = date;
+                    }
+
+                    // Always update the appointment list and refresh calendar
+                    UpdateAppointmentList();
+                    DisplayCalendarGrid();
+                }
+            }
+        }
+
+        private void CalendarGrid_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
+            {
+                var cell = calendarGrid.Rows[e.RowIndex].Cells[e.ColumnIndex];
+
+                // Set default style
+                e.CellStyle.Alignment = DataGridViewContentAlignment.TopLeft;
+                e.CellStyle.Padding = new Padding(5);
+
+                if (cell.Tag is DateTime date)
+                {
+                    // Format based on selection and appointments
+                    if (selectedDate.HasValue && date.Date == selectedDate.Value.Date)
+                    {
+                        e.CellStyle.BackColor = Color.Yellow;
+                        e.CellStyle.SelectionBackColor = Color.Gold;
+                    }
+                    else if (cell.Value.ToString().Contains("appointments"))
+                    {
+                        e.CellStyle.BackColor = Color.LightGreen;
+                        e.CellStyle.SelectionBackColor = Color.PaleGreen;
+                    }
+
+                    // Today's date
+                    if (date.Date == DateTime.Today)
+                    {
+                        e.CellStyle.Font = new Font(e.CellStyle.Font, FontStyle.Bold);
+                    }
+                }
+            }
+        }
+
+        private void bttnPreviosMonth_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                currentMonth = currentMonth.AddMonths(-1);
+                selectedDate = null;
+                DisplayCalendarGrid();
+                UpdateAppointmentList();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error navigating to previous month: {ex.Message}");
+            }
+        }
+
+        private void bttnNextMonth_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                currentMonth = currentMonth.AddMonths(1);
+                selectedDate = null;
+                DisplayCalendarGrid();
+                UpdateAppointmentList();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error navigating to next month: {ex.Message}");
+            }
         }
 
         private void bttnReports_Click(object sender, EventArgs e)
         {
-
             ContextMenuStrip reportsMenu = new ContextMenuStrip();
             reportsMenu.Items.Add("Appointment Types by Month", null, (s, args) =>
             {
@@ -80,6 +397,14 @@ namespace schedulingApp
                 var appointments = GetAppointmentsForReports();
                 if (appointments != null)
                     GenerateCustomerLocationReport(appointments);
+            });
+
+            // Add the new report option
+            reportsMenu.Items.Add("Duration Analysis", null, (s, args) =>
+            {
+                var appointments = GetAppointmentsForReports();
+                if (appointments != null)
+                    GenerateAppointmentDurationReport(appointments);
             });
 
             reportsMenu.Items.Add(new ToolStripSeparator());
@@ -105,12 +430,12 @@ namespace schedulingApp
                 return null;
             }
 
-            // !!Check: Convert DataTable to list of appointments 
             return appointments.AsEnumerable()
                 .Select(row => new
                 {
                     Type = row.Field<string>("type"),
                     Start = row.Field<DateTime>("start"),
+                    End = row.Field<DateTime>("end"),  // Add this line
                     CustomerName = row.Field<string>("customerName"),
                     UserId = row.Field<int>("userId"),
                     Title = row.Field<string>("title"),
@@ -119,6 +444,117 @@ namespace schedulingApp
                 })
                 .ToList();
         }
+
+        private void GenerateAppointmentDurationReport(IEnumerable<dynamic> appointments)
+        {
+            try
+            {
+                var report = appointments
+                    .Select(a => new
+                    {
+                        Type = (string)a.Type,
+                        StartTime = (DateTime)a.Start,
+                        EndTime = (DateTime)a.End,
+                        Customer = (string)a.CustomerName,
+                        DurationInMinutes = (int)((DateTime)a.End - (DateTime)a.Start).TotalMinutes
+                    })
+                    .GroupBy(a => a.Type)
+                    .Select(g => new
+                    {
+                        AppointmentType = g.Key,
+                        Count = g.Count(),
+                        TotalDuration = g.Sum(x => x.DurationInMinutes),
+                        AverageDuration = (int)g.Average(x => x.DurationInMinutes)
+                    })
+                    .OrderByDescending(x => x.Count)
+                    .ToList();
+
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine("Appointment Duration Analysis Report\n");
+                sb.AppendLine("----------------------------------------\n");
+
+                foreach (var typeStats in report)
+                {
+                    sb.AppendLine($"Type: {typeStats.AppointmentType}");
+                    sb.AppendLine($"Total Appointments: {typeStats.Count}");
+                    sb.AppendLine($"Total Duration: {typeStats.TotalDuration} minutes");
+                    sb.AppendLine($"Average Duration: {typeStats.AverageDuration} minutes");
+                    sb.AppendLine("----------------------------------------\n");
+                }
+
+                ShowReportDialog("Appointment Duration Analysis", sb.ToString());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error generating duration analysis report: {ex.Message}\n\nStack Trace: {ex.StackTrace}");
+            }
+        }
+        private void GenerateReports()
+        {
+            var appointments = dbHelper.GetAllAppointments();
+            if (appointments == null || appointments.Rows.Count == 0)
+            {
+                MessageBox.Show("No appointments found to generate reports.");
+                return;
+            }
+
+            var appointmentList = appointments.AsEnumerable()
+                .Select(row => new
+                {
+                    Type = row.Field<string>("type"),
+                    Start = row.Field<DateTime>("start"),
+                    End = row.Field<DateTime>("end"),  // Add this line
+                    CustomerName = row.Field<string>("customerName"),
+                    UserId = row.Field<int>("userId"),
+                    Title = row.Field<string>("title"),
+                    Description = row.Field<string>("description"),
+                    Location = row.Field<string>("location")
+                }).ToList();
+
+            GenerateAppointmentTypesByMonth(appointmentList);
+            GenerateUserSchedules(appointmentList);
+            GenerateCustomerLocationReport(appointmentList);
+            GenerateAppointmentDurationReport(appointmentList);  // Add this line
+        }
+
+
+
+        //private void bttnReports_Click(object sender, EventArgs e)
+        //{
+
+        //    ContextMenuStrip reportsMenu = new ContextMenuStrip();
+        //    reportsMenu.Items.Add("Appointment Types by Month", null, (s, args) =>
+        //    {
+        //        var appointments = GetAppointmentsForReports();
+        //        if (appointments != null)
+        //            GenerateAppointmentTypesByMonth(appointments);
+        //    });
+
+        //    reportsMenu.Items.Add("User Schedules", null, (s, args) =>
+        //    {
+        //        var appointments = GetAppointmentsForReports();
+        //        if (appointments != null)
+        //            GenerateUserSchedules(appointments);
+        //    });
+
+        //    reportsMenu.Items.Add("Location Analysis", null, (s, args) =>
+        //    {
+        //        var appointments = GetAppointmentsForReports();
+        //        if (appointments != null)
+        //            GenerateCustomerLocationReport(appointments);
+        //    });
+
+        //    reportsMenu.Items.Add(new ToolStripSeparator());
+
+        //    reportsMenu.Items.Add("Generate All Reports", null, (s, args) =>
+        //    {
+        //        GenerateReports();
+        //    });
+
+        //    // Show menu
+        //    reportsMenu.Show(bttnReports, new Point(0, bttnReports.Height));
+        //}
+
 
 
         private void ExportReport(string reportContent, string suggestedFileName)
@@ -150,7 +586,7 @@ namespace schedulingApp
             }
         }
 
-        // ShowReportDialog method include export option
+       
         private void ShowReportDialog(string title, string report)
         {
             Form reportForm = new Form
@@ -192,49 +628,89 @@ namespace schedulingApp
 
         private void LoadAppointments()
         {
-            UpdateAppointmentList();
+            try
+            {
+                if (dbHelper == null)
+                {
+                    appointmentList.Items.Add("Database connection unavailable");
+                    return;
+                }
+                UpdateAppointmentList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading appointments: {ex.Message}");
+                appointmentList.Items.Add("Error loading appointments");
+            }
         }
 
         private void UpdateAppointmentList()
         {
-            appointmentList.Items.Clear();
+            try
+            {
+                appointmentList.Items.Clear();
 
-            DataTable appointments;
-            if (selectedDate.HasValue)
-            {
-                appointments = dbHelper.GetAppointmentsByDate(selectedDate.Value);
-            }
-            else
-            {
-                appointments = dbHelper.GetAllAppointments();
-            }
+                if (dbHelper == null)
+                {
+                    appointmentList.Items.Add("Database connection unavailable");
+                    return;
+                }
 
-            if (appointments == null || appointments.Rows.Count == 0)
-            {
-                appointmentList.Items.Add("No appointments registered yet. Consider creating one");
-                return;
-            }
+                DataTable appointments;
+                try
+                {
+                    if (selectedDate.HasValue)
+                    {
+                        appointments = dbHelper.GetAppointmentsByDate(selectedDate.Value);
+                    }
+                    else
+                    {
+                        appointments = dbHelper.GetAllAppointments();
+                    }
 
-            foreach (DataRow row in appointments.Rows)
+                    if (appointments == null || appointments.Rows.Count == 0)
+                    {
+                        appointmentList.Items.Add("No appointments found");
+                        return;
+                    }
+
+                    foreach (DataRow row in appointments.Rows)
+                    {
+                        DateTime startTimeEST = Convert.ToDateTime(row["start"]).AddHours(-5);
+                        DateTime endTimeEST = Convert.ToDateTime(row["end"]).AddHours(-5);
+
+                        string appointmentInfo =
+                            $"Customer: {row["customerName"]}\n" +
+                            $"Start: {startTimeEST.ToString("MM/dd/yyyy HH:mm tt EST")}\n" +
+                            $"End: {endTimeEST.ToString("MM/dd/yyyy HH:mm tt EST")}\n" +
+                            $"Type: {row["type"]}\n" +
+                            $"Description: {row["description"]}";
+
+                        appointmentList.Items.Add(appointmentInfo);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    appointmentList.Items.Add($"Error loading appointments: {ex.Message}");
+                }
+            }
+            catch (Exception ex)
             {
-                string appointmentInfo = $"{row["customerName"]} - {Convert.ToDateTime(row["start"]).ToString("h:mm tt")}" +
-                                       $"\n{row["type"]}: {row["description"]}";
-                appointmentList.Items.Add(appointmentInfo);
+                MessageBox.Show($"Error updating appointment list: {ex.Message}", "Update Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
-        //[STAThread]
-        private void StartComp()
-        {
-            bttnPreviosMonth.Click += bttnPreviosMonth_Click;
-            bttnNextMonth.Click += bttnNextMonth_Click;
-            this.Text = "Scheduling App";
-        }
+        
+        //private void StartComp()
+        //{
+        //    bttnPreviosMonth.Click += bttnPreviosMonth_Click;
+        //    bttnNextMonth.Click += bttnNextMonth_Click;
+        //    this.Text = "Scheduling App";
+        //}
         private void ConfigureAppointmentList()
         {
             // Keep your existing configuration
             appointmentList.DrawMode = DrawMode.OwnerDrawFixed;
-            appointmentList.ItemHeight = 50;
+            appointmentList.ItemHeight = 100;
             appointmentList.DrawItem += AppointmentList_DrawItem;
 
             // Add double-click handler
@@ -273,8 +749,7 @@ namespace schedulingApp
             editForm.FormClosed += (s, args) =>
             {
                 this.Show();
-                // Refresh the calendar and appointment list
-                DisplayCalendar();
+                DisplayCalendarGrid();
                 UpdateAppointmentList();
             };
             editForm.Show();
@@ -309,18 +784,37 @@ namespace schedulingApp
             // Set margins (left: 20px, top: 10px)
             int marginLeft = 20;
             int marginTop = 10;
+            
+            //New
+            using (StringFormat sf = new StringFormat())
+            {
+                sf.LineAlignment = StringAlignment.Near;
+                e.Graphics.DrawString(appointmentText, appointmentFont, new SolidBrush(lb.ForeColor),
+                                    new RectangleF(e.Bounds.X + marginLeft, e.Bounds.Y + marginTop,
+                                                 e.Bounds.Width - marginLeft * 2, e.Bounds.Height - marginTop * 2),
+                                    sf);
+            }
 
-            // Draw the appointment text with margin and bold font if selected
-            e.Graphics.DrawString(appointmentText, appointmentFont, new SolidBrush(lb.ForeColor),
-                                  new PointF(e.Bounds.X + marginLeft, e.Bounds.Y + marginTop));
+            // Draw borders
+            using (Pen borderPen = new Pen(Color.Gray, 1))
+            {
+                e.Graphics.DrawLine(borderPen, e.Bounds.Left, e.Bounds.Top, e.Bounds.Right, e.Bounds.Top);
+                e.Graphics.DrawLine(borderPen, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
+            }
 
-            // Draw top and bottom border for the item
-            Pen borderPen = new Pen(Color.Gray, 1);
-            e.Graphics.DrawLine(borderPen, e.Bounds.Left, e.Bounds.Top, e.Bounds.Right, e.Bounds.Top);
-            e.Graphics.DrawLine(borderPen, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
-
-            // Ensure item is correctly drawn
             e.DrawFocusRectangle();
+
+            //// Draw the appointment text with margin and bold font if selected
+            //e.Graphics.DrawString(appointmentText, appointmentFont, new SolidBrush(lb.ForeColor),
+            //                      new PointF(e.Bounds.X + marginLeft, e.Bounds.Y + marginTop));
+
+            //// Draw top and bottom border for the item
+            //Pen borderPen = new Pen(Color.Gray, 1);
+            //e.Graphics.DrawLine(borderPen, e.Bounds.Left, e.Bounds.Top, e.Bounds.Right, e.Bounds.Top);
+            //e.Graphics.DrawLine(borderPen, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
+
+            //// Ensure item is correctly drawn
+            //e.DrawFocusRectangle();
         }
 
         private void appointmentList_SelectedIndexChanged(object sender, EventArgs e)
@@ -328,99 +822,6 @@ namespace schedulingApp
 
         }
         // Display the calendar for the current month
-        private void DisplayCalendar()
-        {
-            calendarPanel.SuspendLayout();
-            calendarPanel.Controls.Clear();
-
-            DateTime firstDayOfMonth = new DateTime(currentMonth.Year, currentMonth.Month, 1);
-            int daysInMonth = DateTime.DaysInMonth(currentMonth.Year, currentMonth.Month);
-
-            labelMonth.Text = currentMonth.ToString("MMMM yyyy");
-
-            // Add day labels
-            string[] dayNames = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-            for (int i = 0; i < 7; i++)
-            {
-                Label dayLabel = new Label
-                {
-                    Text = dayNames[i],
-                    TextAlign = ContentAlignment.MiddleCenter,
-                    Dock = DockStyle.Fill,
-                    Font = new Font("Arial", 9, FontStyle.Bold),
-                    ForeColor = Color.White
-                };
-                calendarPanel.Controls.Add(dayLabel, i, 0);
-            }
-
-            // Get appointment counts for the month
-            var appointmentCounts = dbHelper.GetMonthlyAppointmentCounts(currentMonth);
-
-            int dayOffset = (int)firstDayOfMonth.DayOfWeek;
-
-            // Create buttons for each day
-            for (int day = 1; day <= daysInMonth; day++)
-            {
-                DateTime date = new DateTime(currentMonth.Year, currentMonth.Month, day);
-                Button dayButton = new Button
-                {
-                    Text = day.ToString(),
-                    Dock = DockStyle.Fill,
-                    Tag = date,
-                    FlatStyle = FlatStyle.Flat
-                };
-
-                // Style the button based on appointments
-                if (appointmentCounts.ContainsKey(date))
-                {
-                    dayButton.BackColor = Color.LightGreen;
-                    dayButton.Text = $"{day}\n({appointmentCounts[date]})";
-                }
-                else
-                {
-                    dayButton.BackColor = Color.White;
-                }
-
-                // Highlight selected date
-                if (selectedDate.HasValue && date.Date == selectedDate.Value.Date)
-                {
-                    dayButton.BackColor = Color.Yellow;
-                }
-
-                dayButton.Click += (sender, e) => OnDaySelected(date);
-                calendarPanel.Controls.Add(dayButton, (dayOffset + day - 1) % 7, (dayOffset + day - 1) / 7 + 1);
-            }
-
-            calendarPanel.ResumeLayout();
-        }
-
-        // Handle when a day is clicked
-        private void OnDaySelected(DateTime date)
-        {
-            if (selectedDate.HasValue && selectedDate.Value.Date == date.Date)
-            {
-                // Deselect the date if it's already selected
-                selectedDate = null;
-            }
-            else
-            {
-                selectedDate = date;
-            }
-
-            DisplayCalendar(); // Refresh calendar to show selection
-            UpdateAppointmentList(); // Update appointment list for selected date
-        }
-
-        private void bttnPreviosMonth_Click(object sender, EventArgs e)
-        {
-            currentMonth = currentMonth.AddMonths(-1);
-            DisplayCalendar();
-        }
-        private void bttnNextMonth_Click(object sender, EventArgs e)
-        {
-            currentMonth = currentMonth.AddMonths(1);
-            DisplayCalendar();
-        }
         public class DoubleBufferedTableLayoutPanel : TableLayoutPanel
         {
             public DoubleBufferedTableLayoutPanel()
@@ -428,37 +829,7 @@ namespace schedulingApp
                 this.DoubleBuffered = true;
             }
         }
-
-
-
-        private void GenerateReports()
-        {
-            var appointments = dbHelper.GetAllAppointments();
-            if (appointments == null || appointments.Rows.Count == 0)
-            {
-                MessageBox.Show("No appointments found to generate reports.");
-                return;
-            }
-
-            // Convert DataTable to list of appointments for easier manipulation
-            var appointmentList = appointments.AsEnumerable()
-                .Select(row => new
-                {
-                    Type = row.Field<string>("type"),
-                    Start = row.Field<DateTime>("start"),
-                    CustomerName = row.Field<string>("customerName"),
-                    UserId = row.Field<int>("userId"),
-                    Title = row.Field<string>("title"),
-                    Description = row.Field<string>("description"),
-                    Location = row.Field<string>("location")
-                }).ToList();
-
-            // Generate reports
-            GenerateAppointmentTypesByMonth(appointmentList);
-            GenerateUserSchedules(appointmentList);
-            GenerateCustomerLocationReport(appointmentList); // Additional report
-        }
-
+        
         private void GenerateAppointmentTypesByMonth(IEnumerable<dynamic> appointments)
         {
             try
@@ -598,9 +969,27 @@ namespace schedulingApp
 
         private void bttnNewCustomer_Click(object sender, EventArgs e)
         {
-            NewCustomerForm newCustomerForm = new NewCustomerForm();
-            newCustomerForm.Show();
+            currentNewCustomerForm = new NewCustomerForm();
+            currentNewCustomerForm.FormClosed += (s, args) =>
+            {
+                this.Show();
+                currentNewCustomerForm = null;  
+                DisplayCalendarGrid();
+                UpdateAppointmentList();
+            };
+            currentNewCustomerForm.Show();
             this.Hide();
+
+            //NewCustomerForm newCustomerForm = new NewCustomerForm();
+            //newCustomerForm.FormClosed += (s, args) =>
+            //{
+            //    this.Show();
+            //    // Refresh any necessary data
+            //    DisplayCalendarGrid();
+            //    UpdateAppointmentList();
+            //};
+            //newCustomerForm.Show();
+            //this.Hide();
         }
 
         private void bttnEditCustomer_Click(object sender, EventArgs e)
@@ -610,7 +999,7 @@ namespace schedulingApp
             {
                 this.Show();
                 // Refresh the calendar and appointment list in case customer details affect appointments
-                DisplayCalendar();
+                DisplayCalendarGrid();
                 UpdateAppointmentList();
             };
             editCustomerForm.Show();
@@ -623,8 +1012,7 @@ namespace schedulingApp
             newAppointmentForm.FormClosed += (s, args) =>
             {
                 this.Show();
-                // Refresh the calendar and appointment list
-                DisplayCalendar();
+                DisplayCalendarGrid();
                 UpdateAppointmentList();
             };
             newAppointmentForm.Show();
@@ -687,7 +1075,7 @@ namespace schedulingApp
                                   MessageBoxIcon.Information);
 
                     // Refresh the calendar and appointment list
-                    DisplayCalendar();
+                    DisplayCalendarGrid();
                     UpdateAppointmentList();
                 }
                 else
@@ -702,7 +1090,16 @@ namespace schedulingApp
 
         private void bttnLogout_Click(object sender, EventArgs e)
         {
+            DialogResult result = MessageBox.Show("Are you sure you want to log out?",
+                "Confirm Logout", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
+            if (result == DialogResult.Yes)
+            {
+                LoginForm loginForm = new LoginForm();
+                loginForm.Show();
+
+                this.Close();
+            }
         }
     }
 }

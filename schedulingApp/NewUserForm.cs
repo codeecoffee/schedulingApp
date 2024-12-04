@@ -17,18 +17,21 @@ namespace schedulingApp
         {
             string username = userNameInput.Text.Trim();
             string password = PasswordInput.Text;
-            string confirmPassword = PasswordConfirmation.Text;
+            string confirmPassword = ConfirmPassword.Text;
 
+            //validation Part
+            
+            //1. check for empty fields/ exceeding 50 chars
             var (isValid, message) = ValidationHelper.ValidateLoginInput(username, password);
-
             if (!isValid)
             {
                 MessageBox.Show(message, "Registration Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            
 
-            // Check if passwords match
+           //2.check if pass and confirmation match
             if (password != confirmPassword)
             {
                 MessageBox.Show("Passwords do not match.", "Registration Error",
@@ -36,9 +39,7 @@ namespace schedulingApp
                 return;
             }
 
-            // Attempt to register the user
             var (success, dbMessage) = dbHelper.RegisterUser(username, password);
-
             if (success)
             {
                 MessageBox.Show(dbMessage, "Registration Successful",
@@ -54,6 +55,7 @@ namespace schedulingApp
                 MessageBox.Show(dbMessage, "Registration Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+
         }
 
         private void bttnExit_Click(object sender, EventArgs e)

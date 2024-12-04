@@ -13,73 +13,10 @@ namespace schedulingApp
             dbHelper = new DatabaseHelper();
         }
 
-        private void bttnSave_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                // Get values and trim them
-                string customerName = CustomerNameInput.Text.Trim();
-                string address = CustomerAddressInput.Text.Trim();
-                string address2 = CustomerAddress2Input.Text.Trim();  
-                string city = CustomerCityInput.Text.Trim();         
-                string country = CustomerCountryInput.Text.Trim();    
-                string postalCode = CustomerPostalCodeInput.Text.Trim(); 
-                string phoneNumber = CustomerPhoneInput.Text.Trim();
-
-                // Validate all customer input
-                var (isValid, validationMessage) = ValidationHelper.ValidateCustomerInput(
-                    customerName,
-                    address,
-                    address2,
-                    postalCode,
-                    phoneNumber,
-                    city,
-                    country);
-
-                if (!isValid)
-                {
-                    MessageBox.Show(validationMessage, "Validation Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                // Try to add the customer
-                var (success, dbMessage) = dbHelper.AddCustomer(
-                    customerName,
-                    address,
-                    address2,
-                    city,
-                    country,
-                    postalCode,
-                    phoneNumber);
-
-                if (success)
-                {
-                    MessageBox.Show(dbMessage, "Success",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                    // Return to main form
-                    MainForm mainForm = new MainForm();
-                    mainForm.Show();
-                    this.Close();
-                }
-                else
-                {
-                    MessageBox.Show(dbMessage, "Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"An error occurred: {ex.Message}", "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
         private void bttnExit_Click(object sender, EventArgs e)
         {
-            MainForm mainForm = new MainForm();
-            mainForm.Show();
+            //MainForm mainForm = new MainForm();
+            //mainForm.Show();
             this.Close();
         }
 
@@ -152,6 +89,69 @@ namespace schedulingApp
                 MessageBox.Show(message, "Validation Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 CustomerPhoneInput.Focus();
+            }
+        }
+
+        private void bttnRegister_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Get values and trim them
+                string customerName = CustomerNameInput.Text.Trim();
+                string address = CustomerAddressInput.Text.Trim();
+                string address2 = CustomerAddress2Input.Text.Trim();
+                string city = CustomerCityInput.Text.Trim();
+                string country = CustomerCountryInput.Text.Trim();
+                string postalCode = CustomerPostalCodeInput.Text.Trim();
+                string phoneNumber = CustomerPhoneInput.Text.Trim();
+
+                //Validate all customer input
+                var (isValid, validationMessage) = ValidationHelper.ValidateCustomerInput(
+                    customerName,
+                    address,
+                    address2,
+                    postalCode,
+                    phoneNumber,
+                    city,
+                    country);
+
+                if (!isValid)
+                {
+                    MessageBox.Show(validationMessage, "Validation Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Try to add the customer
+                var (success, dbMessage) = dbHelper.AddCustomer(
+                    customerName,
+                    address,
+                    address2,
+                    city,
+                    country,
+                    postalCode,
+                    phoneNumber);
+
+                if (success)
+                {
+                    MessageBox.Show(dbMessage, "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    // Return to main form
+                    //MainForm mainForm = new MainForm();
+                    //mainForm.Show();
+                    this.Close();
+                }
+                else
+                {
+                    MessageBox.Show(dbMessage, "Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

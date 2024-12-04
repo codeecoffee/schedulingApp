@@ -33,7 +33,7 @@
             bttnRegister = new Button();
             titleLabel = new Label();
             PasswordConfirmation = new Label();
-            CustomerPhoneInput = new TextBox();
+            ConfirmPassword = new TextBox();
             labelAddress = new Label();
             PasswordInput = new TextBox();
             labelUsername = new Label();
@@ -49,7 +49,7 @@
             BgImg.Controls.Add(bttnRegister);
             BgImg.Controls.Add(titleLabel);
             BgImg.Controls.Add(PasswordConfirmation);
-            BgImg.Controls.Add(CustomerPhoneInput);
+            BgImg.Controls.Add(ConfirmPassword);
             BgImg.Controls.Add(labelAddress);
             BgImg.Controls.Add(PasswordInput);
             BgImg.Controls.Add(labelUsername);
@@ -80,7 +80,7 @@
             bttnRegister.BackColor = Color.LawnGreen;
             bttnRegister.Cursor = Cursors.Hand;
             bttnRegister.FlatStyle = FlatStyle.Flat;
-            bttnRegister.Font = new Font("Rubik", 12F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 0);
+            bttnRegister.Font = new Font("Microsoft Sans Serif", 12F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 0);
             bttnRegister.Location = new Point(240, 692);
             bttnRegister.Name = "bttnRegister";
             bttnRegister.Size = new Size(271, 35);
@@ -110,15 +110,15 @@
             PasswordConfirmation.TabIndex = 19;
             PasswordConfirmation.Text = "Confirm Password";
             // 
-            // CustomerPhoneInput
+            // ConfirmPassword
             // 
-            CustomerPhoneInput.Location = new Point(161, 528);
-            CustomerPhoneInput.Name = "CustomerPhoneInput";
-            CustomerPhoneInput.PasswordChar = '*';
-            CustomerPhoneInput.PlaceholderText = "Re-enter your password";
-            CustomerPhoneInput.Size = new Size(423, 23);
-            CustomerPhoneInput.TabIndex = 18;
-            CustomerPhoneInput.UseSystemPasswordChar = true;
+            ConfirmPassword.Location = new Point(161, 528);
+            ConfirmPassword.Name = "ConfirmPassword";
+            ConfirmPassword.PasswordChar = '*';
+            ConfirmPassword.PlaceholderText = "Re-enter your password";
+            ConfirmPassword.Size = new Size(423, 23);
+            ConfirmPassword.TabIndex = 18;
+            ConfirmPassword.UseSystemPasswordChar = true;
             // 
             // labelAddress
             // 
@@ -180,7 +180,7 @@
         private Button bttnRegister;
         private Label titleLabel;
         private Label PasswordConfirmation;
-        private TextBox CustomerPhoneInput;
+        private TextBox ConfirmPassword;
         private Label labelAddress;
         private TextBox PasswordInput;
         private Label labelUsername;

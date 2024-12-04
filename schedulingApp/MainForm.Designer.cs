@@ -85,13 +85,13 @@
             bttnCancelAppt.BackColor = Color.Red;
             bttnCancelAppt.Cursor = Cursors.Hand;
             bttnCancelAppt.FlatStyle = FlatStyle.Flat;
-            bttnCancelAppt.Font = new Font("Noto Sans", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            bttnCancelAppt.Font = new Font("Microsoft Sans Serif", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
             bttnCancelAppt.ForeColor = Color.White;
             bttnCancelAppt.Location = new Point(45, 106);
             bttnCancelAppt.Name = "bttnCancelAppt";
             bttnCancelAppt.Size = new Size(140, 30);
             bttnCancelAppt.TabIndex = 1;
-            bttnCancelAppt.Text = "Cancel Appt";
+            bttnCancelAppt.Text = "Delete Appt";
             bttnCancelAppt.UseVisualStyleBackColor = false;
             bttnCancelAppt.Click += bttnCancelAppt_Click;
             // 
@@ -100,7 +100,7 @@
             bttnNewAppt.BackColor = Color.GreenYellow;
             bttnNewAppt.Cursor = Cursors.Hand;
             bttnNewAppt.FlatStyle = FlatStyle.Flat;
-            bttnNewAppt.Font = new Font("Noto Sans", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            bttnNewAppt.Font = new Font("Microsoft Sans Serif", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
             bttnNewAppt.ForeColor = Color.Black;
             bttnNewAppt.Location = new Point(45, 48);
             bttnNewAppt.Name = "bttnNewAppt";
@@ -128,12 +128,12 @@
             bttnEditCustomer.BackColor = Color.Yellow;
             bttnEditCustomer.Cursor = Cursors.Hand;
             bttnEditCustomer.FlatStyle = FlatStyle.Flat;
-            bttnEditCustomer.Font = new Font("Noto Sans", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            bttnEditCustomer.Font = new Font("Microsoft Sans Serif", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
             bttnEditCustomer.Location = new Point(66, 96);
             bttnEditCustomer.Name = "bttnEditCustomer";
             bttnEditCustomer.Size = new Size(140, 30);
             bttnEditCustomer.TabIndex = 3;
-            bttnEditCustomer.Text = "Edit Customer";
+            bttnEditCustomer.Text = "Edit Customers";
             bttnEditCustomer.UseVisualStyleBackColor = false;
             bttnEditCustomer.Click += bttnEditCustomer_Click;
             // 
@@ -142,7 +142,7 @@
             bttnNewCustomer.BackColor = Color.GreenYellow;
             bttnNewCustomer.Cursor = Cursors.Hand;
             bttnNewCustomer.FlatStyle = FlatStyle.Flat;
-            bttnNewCustomer.Font = new Font("Noto Sans", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            bttnNewCustomer.Font = new Font("Microsoft Sans Serif", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
             bttnNewCustomer.Location = new Point(66, 32);
             bttnNewCustomer.Name = "bttnNewCustomer";
             bttnNewCustomer.Size = new Size(140, 30);
@@ -212,7 +212,7 @@
             bttnLogout.BackColor = Color.RoyalBlue;
             bttnLogout.Cursor = Cursors.Hand;
             bttnLogout.FlatStyle = FlatStyle.Flat;
-            bttnLogout.Font = new Font("Noto Sans", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            bttnLogout.Font = new Font("Microsoft Sans Serif", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
             bttnLogout.ForeColor = Color.White;
             bttnLogout.Location = new Point(1096, 695);
             bttnLogout.Name = "bttnLogout";

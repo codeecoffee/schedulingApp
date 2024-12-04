@@ -21,11 +21,16 @@ namespace schedulingApp
             dbHelper = new DatabaseHelper();
             LoadCustomers();
 
-            // Set up the DataGridView
+           
             customersDataGridView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             customersDataGridView.MultiSelect = false;
             customersDataGridView.ReadOnly = true;
+
+            customersDataGridView.CellClick += new DataGridViewCellEventHandler(customersDataGridView_CellClick);
+            customersDataGridView.CellDoubleClick += new DataGridViewCellEventHandler(customersDataGridView_CellDoubleClick);
+
         }
+
         private void LoadCustomers()
         {
             try
@@ -55,17 +60,50 @@ namespace schedulingApp
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+        //OK
+        private void customersDataGridView_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+            {
+                DataGridViewRow row = customersDataGridView.Rows[e.RowIndex];
+                currentCustomerId = Convert.ToInt32(row.Cells["customerId"].Value);
+            }
+        }
+        //OK
+        private void customersDataGridView_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+            {
+                DataGridViewRow row = customersDataGridView.Rows[e.RowIndex];
+                currentCustomerId = Convert.ToInt32(row.Cells["customerId"].Value);
+
+                CustomerNameInput.Text = row.Cells["customerName"].Value.ToString();
+                CustomerAddressInput.Text = row.Cells["address"].Value.ToString();
+                CustomerAddress2Input.Text = row.Cells["address2"].Value.ToString();
+                CustomerCityInput.Text = row.Cells["city"].Value.ToString();
+                CustomerCountryInput.Text = row.Cells["country"].Value.ToString();
+                CustomerPostalCodeInput.Text = row.Cells["postalCode"].Value.ToString();
+                CustomerPhoneInput.Text = row.Cells["phone"].Value.ToString();
+            }
+        }
+
+        private void ClearFields()
+        {
+            currentCustomerId = -1;
+            CustomerNameInput.Text = string.Empty;
+            CustomerAddressInput.Text = string.Empty;
+            CustomerAddress2Input.Text = string.Empty;
+            CustomerCityInput.Text = string.Empty;
+            CustomerCountryInput.Text = string.Empty;
+            CustomerPostalCodeInput.Text = string.Empty;
+            CustomerPhoneInput.Text = string.Empty;
+        }
 
         private void bttnModify_Click(object sender, EventArgs e)
         {
             if (currentCustomerId == -1)
-            {
-                MessageBox.Show("Please select a customer to modify.", "Validation Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            // Get values from form controls and trim them
+            { MessageBox.Show("Please select a customer to modify.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+           
             string customerName = CustomerNameInput.Text.Trim();
             string address = CustomerAddressInput.Text.Trim();
             string address2 = CustomerAddress2Input.Text.Trim();
@@ -74,7 +112,7 @@ namespace schedulingApp
             string postalCode = CustomerPostalCodeInput.Text.Trim();
             string phoneNumber = CustomerPhoneInput.Text.Trim();
 
-            // Validate all customer input
+            
             var (isValid, validationMessage) = ValidationHelper.ValidateCustomerInput(
                 customerName,
                 address,
@@ -109,6 +147,7 @@ namespace schedulingApp
             {
                 LoadCustomers(); // Reload the grid to show changes
             }
+
         }
 
         private void bttnDeleteCustomer_Click(object sender, EventArgs e)
@@ -142,26 +181,9 @@ namespace schedulingApp
             }
         }
 
-        private void ClearFields()
-        {
-            currentCustomerId = -1;
-            CustomerNameInput.Text = string.Empty;
-            CustomerAddressInput.Text = string.Empty;
-            CustomerAddress2Input.Text = string.Empty;
-            CustomerCityInput.Text = string.Empty;
-            CustomerCountryInput.Text = string.Empty;
-            CustomerPostalCodeInput.Text = string.Empty;
-            CustomerPhoneInput.Text = string.Empty;
-        }
-
-
         private void bttnExit_Click(object sender, EventArgs e)
         {
             this.Close();
-        }
-        private void panel1_Paint(object sender, PaintEventArgs e)
-        {
-
         }
     }
 }
