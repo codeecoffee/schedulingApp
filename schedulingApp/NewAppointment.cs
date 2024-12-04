@@ -288,8 +288,8 @@ namespace schedulingApp
                     DateTime startLocal = TimeZoneInfo.ConvertTimeFromUtc(startUtc, selectedTimeZone);
                     DateTime endLocal = TimeZoneInfo.ConvertTimeFromUtc(endUtc, selectedTimeZone);
 
-                    string startDisplay = $"{startLocal:MM/dd/yyyy HH:mm}";
-                    string endDisplay = $"{endLocal:MM/dd/yyyy HH:mm}";
+                    string startDisplay = $"{startLocal:MM/dd/yyyy HH:mm} (UTC{selectedTimeZone.GetUtcOffset(startLocal):hh\\:mm})";
+                    string endDisplay = $"{endLocal:MM/dd/yyyy HH:mm} (UTC{selectedTimeZone.GetUtcOffset(endLocal):hh\\:mm})";
 
 
                     AppointmentsDataGridView.Rows.Add(
