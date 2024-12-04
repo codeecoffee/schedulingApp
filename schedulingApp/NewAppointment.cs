@@ -10,10 +10,11 @@ using System.Windows.Forms;
 
 namespace schedulingApp
 {
-
+    //[ok]
     public partial class NewAppointment : Form
     {
         private readonly DatabaseHelper dbHelper;
+        
         private int? selectedCustomerId = null;
         private Label timezoneInfoLabel;
         private readonly Label businessHoursLabel;
@@ -64,6 +65,7 @@ namespace schedulingApp
             return $"Current Time - Local: {now:HH:mm}, Eastern: {easternTime:HH:mm}";
         }
 
+       
         public static bool IsWithinBusinessHours(DateTime startTime, DateTime endTime)
         {
            //receives the time input by user 
@@ -274,7 +276,7 @@ namespace schedulingApp
 
                 var (success, message) = dbHelper.AddAppointment(
                     selectedCustomerId.Value,
-                    1, // Current user ID
+                    dbHelper.GetUserIdByUsername (DatabaseHelper.CurrentUser), //curr user ID 
                     TitleInput.Text.Trim(),
                     DescriptionInput.Text.Trim(),
                     LocationInput.Text.Trim(),
@@ -286,6 +288,7 @@ namespace schedulingApp
 
                 if (success)
                 {
+                    MessageBox.Show($"current user: {dbHelper.GetUserIdByUsername(DatabaseHelper.CurrentUser)}");
                     MessageBox.Show("Appointment created successfully!", "Success",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
                     LoadAppointments(selectedCustomerId);

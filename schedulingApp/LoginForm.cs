@@ -16,6 +16,7 @@ namespace schedulingApp
         private readonly Helper helper;
         private readonly DatabaseHelper dbHelper;
 
+
         public LoginForm()
         {
             InitializeComponent();
@@ -26,13 +27,7 @@ namespace schedulingApp
             SimpleFileLogger.VerifyFileAccess();
 
             // Add a test button for direct testing
-            Button testLogButton = new Button
-            {
-                Text = "Test Log",
-                Location = new Point(bttnExit.Left, bttnExit.Top - 50),
-                Size = new Size(86, 36),
-                BackColor = Color.Orange
-            };
+
 
             Label locationLabel = new Label
             {
@@ -65,14 +60,14 @@ namespace schedulingApp
             }
         
 
-        testLogButton.Click += (s, e) => SimpleFileLogger.LogLogin("TEST_USER");
-            this.Controls.Add(testLogButton);
+        
         }
         private void bttnLogin_Click(object sender, EventArgs e)
         {
             string username = usernameInput.Text;
             string password = passwordInput.Text;
-
+            int? userId = dbHelper.GetUserIdByUsername(username);
+           
             // Validate input
             var (isValid, message) = ValidationHelper.ValidateLoginInput(username, password);
             if (!isValid)
@@ -91,8 +86,9 @@ namespace schedulingApp
                 SimpleFileLogger.LogLogin(username);
 
                 dbHelper.LogLoginAttempt(username, true);
-                CheckUpcomingAppointments(username);
+                CheckUpcomingAppointments(userId.Value);
 
+               
                 MessageBox.Show(
                     helper.TranslateMessage("LoginSuccessful"),
                     "",
@@ -116,153 +112,55 @@ namespace schedulingApp
         }
 
 
-
-
-
-
-
-        //}
-        //private void bttnLogin_Click(object sender, EventArgs e)
-        //{
-        //    string username = usernameInput.Text;
-        //    string password = passwordInput.Text;
-
-        //    // Validate input
-        //    var (isValid, message) = ValidationHelper.ValidateLoginInput(username, password);
-        //    if (!isValid)
-        //    {
-        //        MessageBox.Show(
-        //            helper.TranslateMessage(message),
-        //            helper.TranslateMessage("ValidationError"),
-        //            MessageBoxButtons.OK,
-        //            MessageBoxIcon.Warning);
-        //        return;
-        //    }
-
-        //    if (dbHelper.ValidateUser(username, password))
-        //    {
-        //        try
-        //        {
-        //            // Attempt to log the login
-        //            LoginLogger.Log(username);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            MessageBox.Show($"Login successful but logging failed: {ex.Message}");
-        //        }
-
-        //        dbHelper.LogLoginAttempt(username, true);
-        //        CheckUpcomingAppointments(username);
-
-        //        MessageBox.Show(
-        //            helper.TranslateMessage("LoginSuccessful"),
-        //            "",
-        //            MessageBoxButtons.OK,
-        //            MessageBoxIcon.Information);
-
-        //        DatabaseHelper.SetCurrentUser(username);
-        //        MainForm mainForm = new MainForm(username);
-        //        mainForm.Show();
-        //        this.Hide();
-        //    }
-        //    else
-        //    {
-        //        dbHelper.LogLoginAttempt(username, false);
-        //        MessageBox.Show(
-        //            helper.TranslateMessage("LoginFailed"),
-        //            helper.TranslateMessage("ValidationError"),
-        //            MessageBoxButtons.OK,
-        //            MessageBoxIcon.Error);
-        //    }
-        //}
-
-        //private void bttnLogin_Click(object sender, EventArgs e)
-        //{
-        //    string username = usernameInput.Text;
-        //    string password = passwordInput.Text;
-
-        //    // Validate input
-        //    var (isValid, message) = ValidationHelper.ValidateLoginInput(username, password);
-        //    if (!isValid)
-        //    {
-        //        MessageBox.Show(
-        //            helper.TranslateMessage(message),
-        //            helper.TranslateMessage("ValidationError"),
-        //            MessageBoxButtons.OK,
-        //            MessageBoxIcon.Warning);
-        //        ShowLogFile();
-        //        return;
-        //    }
-
-        //    if (dbHelper.ValidateUser(username, password))
-        //    {
-        //        dbHelper.LogLoginAttempt(username, true);
-
-        //        // Log successful login
-        //        LoginLogger.LogUserLogin(username, true);
-
-        //        // Check for upcoming appointments
-        //        CheckUpcomingAppointments(username);
-
-        //        // Show success message
-        //        MessageBox.Show(
-        //            helper.TranslateMessage("LoginSuccessful"),
-        //            "",
-        //            MessageBoxButtons.OK,
-        //            MessageBoxIcon.Information);
-
-        //        DatabaseHelper.SetCurrentUser(username);
-
-        //        // Open main form
-        //        MainForm mainForm = new MainForm(username);
-        //        mainForm.Show();
-        //        this.Hide();
-        //    }
-        //    else
-        //    {
-        //        dbHelper.LogLoginAttempt(username, false);
-
-        //        // Log failed login
-        //        LoginLogger.LogUserLogin(username, false);
-
-        //        MessageBox.Show(
-        //            helper.TranslateMessage("LoginFailed"),
-        //            helper.TranslateMessage("ValidationError"),
-        //            MessageBoxButtons.OK,
-        //            MessageBoxIcon.Error);
-        //    }
-        //}
-
-        private void CheckUpcomingAppointments(string username)
+        public void CheckUpcomingAppointments(int userId)
         {
-            DataTable upcomingAppointments = dbHelper.GetUpcomingAppointments(username, 15);
+            MessageBox.Show("youve reached the checkupcomingappts func ");
+            //MessageBox.Show($"Appts from db: {appointments.Count} userID: {userId}");
+            var allAppts = dbHelper.GetTodaysUpcomingAppointments(userId);
+            //var allAppts = dbHelper.GetAllAppointments();
+            MessageBox.Show($"number of appts: {allAppts} UserId: {userId}");
 
-            if (upcomingAppointments != null && upcomingAppointments.Rows.Count > 0)
-            {
-                foreach (DataRow appointment in upcomingAppointments.Rows)
-                {
-                    DateTime appointmentTime = TimeZoneInfo.ConvertTimeFromUtc(
-                        ((DateTime)appointment["start"]).ToUniversalTime(),
-                        TimeZoneInfo.Local);
 
-                    int minutesUntil = (int)(appointmentTime - DateTime.Now).TotalMinutes;
 
-                    string message = string.Format(
-                        helper.TranslateMessage("UpcomingAppointment"),
-                        minutesUntil) + $"\n\n" +
-                        $"Customer: {appointment["customerName"]}\n" +
-                        $"Title: {appointment["title"]}\n" +
-                        $"Time: {appointmentTime:g}";
 
-                    MessageBox.Show(
-                        message,
-                        helper.TranslateMessage("UpcomingAppointment"),
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
-                }
-            }
+
+            //try
+            //{
+            //    //1. get appts in UTC from db 
+            //    //var appointments = dbHelper.GetTodaysUpcomingAppointments(userId);
+
+            //    //if (appointments.Count <= 0) { return; }
+
+            //    ////2. convert time of appointment to -5
+            //    DateTime currentUtc = DateTime.UtcNow;
+            //    DateTime currentEst = currentUtc.AddHours(-5);
+            //    //3. compare to time now in est
+            //    //foreach (var (customerName, title, startTimeUtc) in appointments)
+            //    //{
+            //    //    DateTime startTimeEst = startTimeUtc.AddHours(-5);
+            //    //    TimeSpan timeDifference = startTimeEst - currentEst;
+
+            //    //MessageBox.Show($"[func: CheckUpcomingappts - LoginForm]\n current UTC {currentUtc}\n currentEst var: {currentEst}\n Start Time Est: {startTimeEst}\n Time diff: {timeDifference}");
+            //    //    if (timeDifference.TotalMinutes is >= 0 and <= 15)
+            //    //    {
+            //    //        MessageBox.Show(
+            //    //            $"Upcoming Appointment Reminder:\n\n" +
+            //    //            $"Customer: {customerName}\n" +
+            //    //            $"Title: {title}\n" +
+            //    //            $"Time: {startTimeEst:hh:mm tt}\n\n" +
+            //    //            $"Starting in {Math.Round(timeDifference.TotalMinutes)} minutes",
+            //    //            "Appointment Reminder",
+            //    //            MessageBoxButtons.OK,
+            //    //            MessageBoxIcon.Information);
+            //    //    }
+            //    //}
+            //}
+            //catch (Exception ex)
+            //{
+            //    MessageBox.Show($"Error checking upcoming appointments: {ex.Message}",
+            //        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            //}
         }
-        
 
         private void bttnRegister_Click(object sender, EventArgs e)
         {

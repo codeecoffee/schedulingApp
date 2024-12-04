@@ -2,6 +2,7 @@
 using System;
 using System.Data;
 using System.Configuration;
+using System.Text;
 
 
 namespace schedulingApp
@@ -16,7 +17,11 @@ namespace schedulingApp
         {
             get { return _currentUser; }
             set { _currentUser = value; }
+        
+            
+            
         }
+        //public static string GetCurrentUser() { return CurrentUser; }
         public static void SetCurrentUser(string username)
         {
             _currentUser = username;
@@ -972,7 +977,7 @@ namespace schedulingApp
                     {
                         DateTime now = DateTime.UtcNow;
                         command.Parameters.AddWithValue("@customerId", customerId);
-                        command.Parameters.AddWithValue("@userId", userId);
+                        command.Parameters.AddWithValue("@userId", GetUserIdByUsername(_currentUser));
                         command.Parameters.AddWithValue("@title", title);
                         command.Parameters.AddWithValue("@description", description);
                         command.Parameters.AddWithValue("@location", location);
@@ -996,6 +1001,67 @@ namespace schedulingApp
                 return (false, $"Error adding appointment: {ex.Message}");
             }
         }
+
+        public List<(string CustomerName, string Title, DateTime StartTime)> GetTodaysUpcomingAppointments(int? userId)
+        {
+            var upcomingAppointments = new List<(string CustomerName, string Title, DateTime StartTime)>();
+
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+
+                    // Get all appointments for the user
+                    string query = @"
+                SELECT 
+                    c.customerName,
+                    a.title,
+                    a.start as startTime
+                FROM appointment a
+                JOIN customer c ON a.customerId = c.customerId
+                WHERE a.userId = @userId";
+
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@userId", userId);
+
+                        using (MySqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                // Get appointment data
+                                DateTime appointmentStart = reader.GetDateTime("startTime");
+
+                                // Convert UTC to EST
+                                DateTime startTimeEst = appointmentStart.AddHours(-5);
+
+                                // Check if appointment is on December 3rd, 2024
+                                if (startTimeEst.Date == new DateTime(2024, 12, 3))
+                                {
+                                    upcomingAppointments.Add((
+                                        reader.GetString("customerName"),
+                                        reader.GetString("title"),
+                                        appointmentStart
+                                    ));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error retrieving appointments: {ex.Message}");
+                throw;
+            }
+
+            return upcomingAppointments;
+        }
+
+
+
+
 
         public (bool success, string message) UpdateAppointment(
             int appointmentId,
@@ -1062,6 +1128,158 @@ namespace schedulingApp
             }
         }
 
+        //public List<(string CustomerName, string Title, DateTime StartTime)> GetTodaysUpcomingAppointments(int userId)
+        //{
+        //    var upcomingAppointments = new List<(string CustomerName, string Title, DateTime StartTime)>();
+        //    MessageBox.Show($"inicio func GetTodayUpcoming from db; userID received: {userId}");
+        //    try
+        //    {
+        //        using (MySqlConnection connection = new MySqlConnection(connectionString))
+        //        {
+        //            connection.Open();
+        //            string query = @"
+        //        SELECT a.appointmentId, a.customerId, a.title, a.start, c.customerName
+        //        FROM appointment a
+        //        JOIN customer c ON a.customerId = c.customerId
+        //        WHERE a.userId = @userId 
+        //        AND DATE(a.start) = DATE(@currentDate)";
 
+        //            using (MySqlCommand command = new MySqlCommand(query, connection))
+        //            {
+        //                DateTime currentUtc = DateTime.UtcNow;
+        //                command.Parameters.AddWithValue("@userId", userId);
+        //                // command.Parameters.AddWithValue("@currentDate", currentUtc);
+        //                command.Parameters.AddWithValue("@currentDate", "2024-12-03");
+        //                using (MySqlDataReader reader = command.ExecuteReader())
+        //                {
+        //                    while (reader.Read())
+        //                    {
+        //                        DateTime appointmentStart = reader.GetDateTime("start");
+        //                        upcomingAppointments.Add((
+        //                            reader.GetString("customerName"),
+        //                            reader.GetString("title"),
+        //                            appointmentStart
+        //                        ));
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine($"Error getting upcoming appointments: {ex.Message}");
+        //        throw;
+        //    }
+
+        //    return upcomingAppointments;
+        //}
+
+     
+
+        //public List<(string CustomerName, string Title, DateTime StartTime)> GetTodaysUpcomingAppointments(int userId)
+        //{
+        //    var upcomingAppointments = new List<(string CustomerName, string Title, DateTime StartTime)>();
+        //    StringBuilder debugOutput = new StringBuilder();
+
+        //    try
+        //    {
+        //        using (MySqlConnection connection = new MySqlConnection(connectionString))
+        //        {
+        //            connection.Open();
+
+        //            MessageBox.Show($"Searching for appointments with userId: {userId}");
+
+        //            string query = @"
+        //        SELECT a.appointmentId, a.customerId, a.title, a.start, c.customerName
+        //        FROM appointment a
+        //        JOIN customer c ON a.customerId = c.customerId
+        //        WHERE a.userId = @userId
+        //        AND DATE(a.start) = '2024-12-03'"; // Added date filter
+
+        //            using (MySqlCommand command = new MySqlCommand(query, connection))
+        //            {
+        //                command.Parameters.AddWithValue("@userId", userId);
+
+        //                using (MySqlDataReader reader = command.ExecuteReader())
+        //                {
+        //                    while (reader.Read())
+        //                    {
+        //                        DateTime appointmentStart = reader.GetDateTime("start");
+        //                        string customerName = reader.GetString("customerName");
+        //                        string title = reader.GetString("title");
+
+        //                        debugOutput.AppendLine($"Found appointment: {customerName} - {title} at {appointmentStart}");
+
+        //                        upcomingAppointments.Add((
+        //                            customerName,
+        //                            title,
+        //                            appointmentStart
+        //                        ));
+        //                    }
+        //                }
+        //            }
+
+        //            // Add additional debug query to see all appointments for this user
+        //            query = @"
+        //        SELECT DATE(start) as date, start, title, customerName
+        //        FROM appointment a
+        //        JOIN customer c ON a.customerId = c.customerId
+        //        WHERE a.userId = @userId";
+
+        //            using (MySqlCommand debugCommand = new MySqlCommand(query, connection))
+        //            {
+        //                debugCommand.Parameters.AddWithValue("@userId", userId);
+        //                using (MySqlDataReader debugReader = debugCommand.ExecuteReader())
+        //                {
+        //                    debugOutput.AppendLine("\nAll appointments for this user:");
+        //                    while (debugReader.Read())
+        //                    {
+        //                        debugOutput.AppendLine($"Date: {debugReader["date"]}, Start: {debugReader["start"]}, " +
+        //                            $"Title: {debugReader["title"]}, Customer: {debugReader["customerName"]}");
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        debugOutput.AppendLine($"Error getting upcoming appointments: {ex.Message}");
+        //        MessageBox.Show(debugOutput.ToString(), "Debug Output");
+        //        throw;
+        //    }
+
+        //    MessageBox.Show(debugOutput.ToString(), "Debug Output");
+        //    return upcomingAppointments;
+        //}
+
+        public int GetUserIdByUsername(string username)
+        {
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = "SELECT userId FROM user WHERE userName = @username";
+
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@username", username);
+
+                        object result = command.ExecuteScalar();
+                        if (result != null && result != DBNull.Value)
+                        {
+                            return Convert.ToInt32(result);
+                        }
+                        return 0;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error finding user ID: {ex.Message}");
+                return 0;
+            }
+        }
     }
+
 }

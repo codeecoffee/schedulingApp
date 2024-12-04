@@ -71,7 +71,7 @@ namespace schedulingApp
             };
 
             // Configure grid columns
-            string[] days = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
+            string[] days = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
             foreach (string day in days)
             {
                 DataGridViewColumn column = new DataGridViewTextBoxColumn
@@ -676,10 +676,13 @@ namespace schedulingApp
 
                     foreach (DataRow row in appointments.Rows)
                     {
+                        DateTime startTimeEST = Convert.ToDateTime(row["start"]).AddHours(-5);
+                        DateTime endTimeEST = Convert.ToDateTime(row["end"]).AddHours(-5);
+
                         string appointmentInfo =
                             $"Customer: {row["customerName"]}\n" +
-                            $"Start: {Convert.ToDateTime(row["start"]).ToString("MM/dd/yyyy h:mm tt")}\n" +
-                            $"End: {Convert.ToDateTime(row["end"]).ToString("MM/dd/yyyy h:mm tt")}\n" +
+                            $"Start: {startTimeEST.ToString("MM/dd/yyyy HH:mm tt EST")}\n" +
+                            $"End: {endTimeEST.ToString("MM/dd/yyyy HH:mm tt EST")}\n" +
                             $"Type: {row["type"]}\n" +
                             $"Description: {row["description"]}";
 

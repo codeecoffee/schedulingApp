@@ -87,19 +87,23 @@
             // 
             EndDatePicker.Location = new Point(286, 524);
             EndDatePicker.Margin = new Padding(2);
-            EndDatePicker.MaxDate = new DateTime(2029, 12, 31, 0, 0, 0, 0);
-            EndDatePicker.MinDate = new DateTime(2024, 11, 4, 0, 0, 0, 0);
+            EndDatePicker.MaxDate = new DateTime(2025, 1, 31, 0, 0, 0, 0);
+            EndDatePicker.MinDate = new DateTime(2024, 12, 1, 0, 0, 0, 0);
             EndDatePicker.Name = "EndDatePicker";
             EndDatePicker.Size = new Size(204, 23);
             EndDatePicker.TabIndex = 40;
+            EndDatePicker.Value = new DateTime(2024, 12, 1, 0, 0, 0, 0);
             // 
             // StartDatePicker
             // 
             StartDatePicker.Location = new Point(59, 524);
             StartDatePicker.Margin = new Padding(2);
+            StartDatePicker.MaxDate = new DateTime(2025, 1, 31, 0, 0, 0, 0);
+            StartDatePicker.MinDate = new DateTime(2024, 1, 12, 0, 0, 0, 0);
             StartDatePicker.Name = "StartDatePicker";
             StartDatePicker.Size = new Size(204, 23);
             StartDatePicker.TabIndex = 39;
+            StartDatePicker.Value = new DateTime(2024, 11, 29, 0, 0, 0, 0);
             // 
             // DescriptionInput
             // 
